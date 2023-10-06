@@ -30,8 +30,7 @@ show_uptime() {
   uptime
 }
 
-drive_space()
-{
+drive_space() {
   echo "Función drive_space"
 }
 
