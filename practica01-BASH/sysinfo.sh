@@ -31,12 +31,18 @@ show_uptime() {
 }
 
 drive_space() {
-  echo "Función drive_space"
+  echo "${TEXT_ULINE}Espacio ocupado en las particiones / discos duros del sistema${TEXT_RESET}"
+  echo # Nueva línea
+  df
 }
 
-home_space()
-{
-  echo "Función home_space"
+home_space() {
+  echo "${TEXT_ULINE}Espacio ocupado por cada uno de los subdirectorios en /home${TEXT_RESET}"
+  if ["$USER" != "root"]; then
+    du -hs ~
+  else
+    du -hs /home/*/
+  fi
 }
 
 ##### Programa principal
