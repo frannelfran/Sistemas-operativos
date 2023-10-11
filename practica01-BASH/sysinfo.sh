@@ -8,6 +8,7 @@
 TITLE="Información del sistema para $HOSTNAME"
 RIGHT_NOW=$(date +"%x %r%Z")
 TIME_STAMP="Actualizada el $RIGHT_NOW por $USER"
+SPACE_TMP=$(du -sh /tmp)
 
 ##### Estilos
 
@@ -38,10 +39,17 @@ drive_space() {
 
 home_space() {
   echo "${TEXT_ULINE}Espacio ocupado por cada uno de los subdirectorios en /home${TEXT_RESET}"
-  if ["$USER" != "root"]; then
+  if [$USER != root]; then
     du -hs ~
   else
     du -hs /home/*/
+  fi
+}
+
+tmp_space() {
+  if [ -d "/tmp" ]; then
+    echo "Información del directorio temporal"
+    echo "Espacio ocupado por /tmp $SPACE_TMP"
   fi
 }
 
@@ -56,5 +64,7 @@ $(show_uptime)
 $(drive_space)
 
 $(home_space)
+
+$(tmp_space)
 $TEXT_GREEN$TIME_STAMP$TEXT_RESET
 _EOF_
