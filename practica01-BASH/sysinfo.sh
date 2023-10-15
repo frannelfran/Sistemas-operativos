@@ -39,7 +39,7 @@ drive_space() {
 
 home_space() {
   echo "${TEXT_ULINE}Espacio ocupado por cada uno de los subdirectorios en /home${TEXT_RESET}"
-  if [$USER != root]; then
+  if [$USER != "root"]; then
     du -hs ~
   else
     du -hs /home/*/
