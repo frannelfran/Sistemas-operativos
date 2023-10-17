@@ -23,7 +23,7 @@ run_strace() {
 # Menú de opciones
 case $option in
 	-h)
-		help
+    help
 	;;
 	-sto)
 		sto_option="$2"
