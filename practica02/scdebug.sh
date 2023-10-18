@@ -1,8 +1,12 @@
 #!/bin/bash
 
-option=$1
+#!/bin/bash
+
+option="$1"
+sto_option=""
+
 help() {
-  echo "Uso: scdebug [-h] [-sto arg] [-v | -vall] [-nattch progtoattach] [prog [arg1 …]]"
+  echo "Uso: scdebug [-h] [-sto arg] [-v | -vall] [-nattch progtoattach] [prog [arg1 ...]]"
   exit 0
 }
 
@@ -44,25 +48,25 @@ attach_strace() {
 
 # Menú de opciones
 case $option in
-	-h)
+  -h)
     help
-	;;
-	-sto)
-		sto_option="$2"
-		shift 2
-	;;
+    ;;
+  -sto)
+    sto_option="$2"
+    shift 2
+    ;;
   -nattch)
-  if [ -n "$sto_option" ]; then
-    attach_strace "$1"
-  else
-    attach_strace "$1"
-  fi
-  ;;
+    if [ -n "$sto_option" ]; then
+      attach_strace "$2"
+    else
+      attach_strace "$2"
+    fi
+    ;;
+  *)
+    if [ -n "$sto_option" ]; then
+      run_strace "$option" "$sto_option"
+    else
+      run_strace "$option" "$@"
+    fi
+    ;;
 esac
-
-# Ejecutar el strace con las opciones marcadas
-if [ -n "$sto_option" ]; then
-  run_strace "$1" $sto_option
-else
-  run_strace "$1" "$@"
-fi
