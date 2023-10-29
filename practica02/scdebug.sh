@@ -21,7 +21,6 @@ run_strace() {
   local strace_command="strace -o $output_file $prog ${args[@]}"
   $strace_command &
   local strace_pid=$!
-  wait $strace_pid
   if [ $? -ne 0 ]; then
     echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
     exit 1
