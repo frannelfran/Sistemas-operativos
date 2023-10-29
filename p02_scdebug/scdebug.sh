@@ -57,7 +57,7 @@ attach_to_process() {
 kill_all_processes() {
   # Terminar todos los procesos trazados del usuario con la señal KILL.
   for pid in $(ps -U $USER -o pid --no-headers); do
-    kill -9 $pid
+	kill -9 $pid
   done
 
   # Terminar todos los procesos trazadores del usuario con la señal KILL.
@@ -98,24 +98,21 @@ case "$opcion" in
   -h)
     help
   ;;
-  -v)
-    show_user_processes
-  ;;
-  -vall)
-    show_all_processes
-  ;;
   -k)
     kill_all_processes
+  ;;
+  -show)
+    show_user_processes
   ;;
   -sto)
     shift
     strace_options="$1"
     shift
   ;;
-  -nattach)
-    shift
-    progtoattach="$1"
-    attach_to_process "$progtoattach"
+  -nttach)
+  	shift
+   	progtoattach="$1"
+   	attach_to_process "$progtoattach"
   ;;
   *)
     run_strace "$@"
