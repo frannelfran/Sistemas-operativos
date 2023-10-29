@@ -2,10 +2,10 @@
 
 # Función de ayuda para mostrar información sobre cómo usar el script.
 help() {
-  echo "scdebug [-h] [-sto opciones] [-nattch progtoattach] [prog [arg1 ...]]"
+  echo "scdebug [-h] [-sto opciones] [-nattach progtoattach] [prog [arg1 ...]]"
   echo "-h: Muestra este mensaje de ayuda."
   echo "-sto opciones: Opciones personalizadas para strace (encerradas entre comillas)."
-  echo "-nattch progtoattach: Monitoriza un proceso existente por nombre."
+  echo "-nattach progtoattach: Monitoriza un proceso existente por nombre."
 }
 
 # Función para mostrar información sobre los procesos del usuario.
@@ -55,16 +55,24 @@ attach_to_process() {
 
 # Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
 kill_all_processes() {
-  # Terminar todos los procesos trazados del usuario con la señal KILL.
-  for pid in $(ps -U $USER -o pid --no-headers); do
-	kill -9 $pid
+  # Obtiene el nombre de usuario actual
+  current_user=$(whoami)
+
+  # Encuentra y mata todos los procesos trazadores del usuario actual
+  pids=$(pgrep -u $current_user)
+  for pid in $pids; do
+    if [ $pid != $$ ]; then  # No mate el propio script
+      echo "Terminando proceso trazador: $pid"
+      kill -9 $pid
+    fi
   done
 
-  # Terminar todos los procesos trazadores del usuario con la señal KILL.
-  for pid in $(ps -U $USER -o pid --no-headers); do
-    tracer_pid=$(cat /proc/$pid/status | grep TracerPid | awk '{print $2}')
-    if [ "$tracer_pid" != "0" ]; then
-      kill -9 $tracer_pid
+  # Encuentra y mata todos los procesos trazados del usuario actual
+  pids=$(pgrep -u $current_user -P 1)  # Procesos no trazadores con padre igual a 1 (init)
+  for pid in $pids; do
+    if [ $pid != $$ ]; then  # No mate el propio script
+      echo "Terminando proceso trazado: $pid"
+      kill -9 $pid
     fi
   done
 }
@@ -101,20 +109,19 @@ case "$opcion" in
   -k)
     kill_all_processes
   ;;
-  -show)
-    show_user_processes
-  ;;
   -sto)
     shift
     strace_options="$1"
     shift
   ;;
   -nttach)
-  	shift
-   	progtoattach="$1"
-   	attach_to_process "$progtoattach"
+    shift
+    progtoattach="$1"
+    attach_to_process "$progtoattach"
   ;;
   *)
     run_strace "$@"
   ;;
 esac
+show_user_processes
+
