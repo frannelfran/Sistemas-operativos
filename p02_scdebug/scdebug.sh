@@ -53,6 +53,22 @@ attach_to_process() {
   fi
 }
 
+# Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
+kill_all_processes() {
+  # Terminar todos los procesos trazados del usuario con la señal KILL.
+  for pid in $(ps -U $USER -o pid --no-headers); do
+    kill -9 $pid
+  done
+
+  # Terminar todos los procesos trazadores del usuario con la señal KILL.
+  for pid in $(ps -U $USER -o pid --no-headers); do
+    tracer_pid=$(cat /proc/$pid/status | grep TracerPid | awk '{print $2}')
+    if [ "$tracer_pid" != "0" ]; then
+      kill -9 $tracer_pid
+    fi
+  done
+}
+
 # Función para ejecutar y monitorear un programa con strace.
 run_strace() {
   local prog="$1"
@@ -87,6 +103,9 @@ case "$opcion" in
   ;;
   -vall)
     show_all_processes
+  ;;
+  -k)
+    kill_all_processes
   ;;
   -sto)
     shift
