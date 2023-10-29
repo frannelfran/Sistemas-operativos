@@ -8,6 +8,23 @@ help() {
   echo "-nattch progtoattach: Monitoriza un proceso existente por nombre."
 }
 
+# Función para mostrar información sobre los procesos del usuario.
+show_user_processes() {
+  echo "Procesos del usuario (PID - Nombre del Proceso):"
+  ps -U $USER -o pid,comm --sort=start
+}
+
+# Función para mostrar información detallada sobre los procesos, incluyendo trazadores y tracees.
+show_all_processes() {
+  echo "Procesos (PID - Nombre del Proceso - Tracer PID - Tracer Nombre):"
+  for pid in $(ps -U $USER -o pid --no-headers); do
+    comm=$(ps -p $pid -o comm --no-headers)
+    tracer_pid=$(cat /proc/$pid/status | grep TracerPid | awk '{print $2}')
+    tracer_name=$(ps -p $tracer_pid -o comm --no-headers)
+    echo "$pid - $comm - $tracer_pid - $tracer_name"
+  done
+}
+
 # Función para adjuntar a un proceso en ejecución con strace.
 attach_to_process() {
   local progtoattach="$1"
@@ -64,18 +81,24 @@ opcion="$1"
 case "$opcion" in
   -h)
     help
-    ;;
+  ;;
+  -v)
+    show_user_processes
+  ;;
+  -vall)
+    show_all_processes
+  ;;
   -sto)
     shift
     strace_options="$1"
     shift
-    ;;
+  ;;
   -nattach)
     shift
     progtoattach="$1"
     attach_to_process "$progtoattach"
-    ;;
+  ;;
   *)
     run_strace "$@"
-    ;;
+  ;;
 esac
