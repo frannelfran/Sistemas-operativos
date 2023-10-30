@@ -165,7 +165,7 @@ case "$opcion" in
   ;;
   -vall)
     shift
-    progtoquery="$1"
+    progtoquery="$2"
     view_all_traces "$progtoqery"
     exit 0
   ;;
