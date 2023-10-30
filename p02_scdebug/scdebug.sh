@@ -64,6 +64,30 @@ view_latest_trace() {
   cat "$latest_trace_file"
 }
 
+# Función para mostrar todas las trazas de un programa en orden de más reciente a más antiguo.
+view_all_traces() {
+  local progtoquery="$1"
+  local base_dir="$HOME/.scdebug/$progtoquery"
+  if [ ! -d "$base_dir" ]; then
+    echo "No se encontraron trazas para el programa: $progtoquery."
+    exit 1
+  fi
+  local trace_files=($(ls -t "$base_dir"))
+  if [ ${#trace_files[@]} -eq 0 ]; then
+    echo "No se encontraron trazas para el programa: $progtoquery."
+    exit 1
+  fi
+  for trace_file in "${trace_files[@]}"; do
+    local trace_path="$base_dir/$trace_file"
+    local trace_time=$(stat -c %y "$trace_path")
+    echo "=============== COMMAND: $progtoquery ======================="
+    echo "=============== TRACE FILE: $trace_file ======================="
+    echo "=============== TIME: $trace_time ======================="
+    cat "$trace_path"
+    echo "-----------------------------------------------------------"
+  done
+}
+
 # Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
 kill_all_processes() {
   # Obtener el nombre de usuario actual
@@ -93,7 +117,6 @@ kill_all_processes() {
 # Función para ejecutar y monitorear un programa con strace.
 run_strace() {
   local prog="$1"
-  shift
   local args=("$@")
   local base_dir="$HOME/.scdebug"
   local uuid=$(uuidgen)
@@ -114,6 +137,9 @@ run_strace() {
   fi
 }
 
+# Visualizar los procesos de usuario
+show_user_processes
+
 opcion="$1"
 case "$opcion" in
   -h)
@@ -123,14 +149,13 @@ case "$opcion" in
     kill_all_processes # Matar todos los procesos
   ;;
   -sto)
-    shift
-    strace_options="$1" # Lanzar el strace
-    shift
-  ;;
-  -nattch)
-    shift
-    progtoattach="$1"
-    attach_to_process "$progtoattach" # Ejecutar el nttach
+    strace_options="$2" # Opciones para el strace
+    program_to_strace="$3" # Programa para hacer el strace
+    run_strace "$program_to_strace"
+    if [ "$3" == "-nattch" ]; then
+      progtoattach="$4"
+      attach_to_process "$progtoattach" # Hacer el nattch
+    fi
   ;;
   -v)
     shift
@@ -138,8 +163,13 @@ case "$opcion" in
     view_latest_trace "$progtoquery"
     exit 0
   ;;
+  -vall)
+    shift
+    progtoquery="$1"
+    view_all_traces "$progtoqery"
+    exit 0
+  ;;
   *)
     run_strace "$@"
   ;;
 esac
-show_user_processes
