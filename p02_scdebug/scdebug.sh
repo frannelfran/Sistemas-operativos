@@ -5,7 +5,9 @@ help() {
   echo "scdebug [-h] [-sto opciones] [-nattach progtoattach] [prog [arg1 ...]]"
   echo "-h: Muestra este mensaje de ayuda."
   echo "-sto opciones: Opciones personalizadas para strace (encerradas entre comillas)."
-  echo "-nattach progtoattach: Monitoriza un proceso existente por nombre."
+  echo "-nattch progtoattach: Monitoriza un proceso existente por nombre."
+  echo "-v: Muestra la última traza de un programa."
+  echo "-vall: Muestra todas las trazas de un programa, ordenadas de más reciente a más antigua."
 }
 
 # Función para mostrar información sobre los procesos del usuario.
@@ -43,6 +45,23 @@ attach_to_process() {
   else
     echo "Ejecución exitosa en modo attach. Los resultados se guardan en $output_file."
   fi
+}
+
+# Función para ver la última traza de un programa
+view_latest_trace() {
+  local progtoquery="$1"
+  local base_dir="$HOME/.scdebug/$progtoquery"
+  local latest_file=$(ls -t "$base_dir" | head -1)
+  if [ -z "$latest_file" ]; then
+    echo "No se encontraron trazas para el programa: $progtoquery."
+    exit 1
+  fi
+  local latest_trace_file="$base_dir/$latest_file"
+  local latest_trace_time=$(stat -c %y "$latest_trace_file")
+  echo "=============== COMMAND: $progtoquery ======================="
+  echo "=============== TRACE FILE: $latest_file ======================="
+  echo "=============== TIME: $latest_trace_time ======================="
+  cat "$latest_trace_file"
 }
 
 # Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
@@ -108,10 +127,16 @@ case "$opcion" in
     strace_options="$1" # Lanzar el strace
     shift
   ;;
-  -nttach)
+  -nattch)
     shift
     progtoattach="$1"
     attach_to_process "$progtoattach" # Ejecutar el nttach
+  ;;
+  -v)
+    shift
+    progtoquery="$1"
+    view_latest_trace "$progtoquery"
+    exit 0
   ;;
   *)
     run_strace "$@"
