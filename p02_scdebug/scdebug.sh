@@ -47,6 +47,71 @@ attach_to_process() {
   fi
 }
 
+# Función para adjuntar a un proceso en ejecución con strace.
+attach_to_processes() {
+  local program_names=("$@")
+  
+  for progtoattach in "${program_names[@]}"; do
+    # Encuentra el PID del proceso más reciente ejecutado por el usuario con el nombre especificado.
+    local newest_pid=$(pgrep -o -u $USER "$progtoattach" | tail -n 1)
+    if [ -z "$newest_pid" ]; then
+      echo "No se encontró un proceso en ejecución con el nombre: $progtoattach."
+    else
+      local base_dir="$HOME/.scdebug"
+      local uuid=$(uuidgen)
+      local program_dir="$base_dir/$progtoattach"
+      if [ ! -d "$program_dir" ]; then
+        mkdir -p "$program_dir"
+      fi
+      local output_file="$program_dir/trace_$uuid.txt"
+      # Ejecuta strace en modo attach al proceso encontrado.
+      local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
+      $strace_command &
+      local strace_pid=$!
+      if [ $? -ne 0 ]; then
+        echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
+      else
+        echo "Ejecución exitosa en modo attach para el proceso: $progtoattach. Los resultados se guardan en $output_file."
+      fi
+    fi
+  done
+}
+
+# Función para adjuntar a procesos en ejecución con strace a partir de los PIDs especificados.
+attach_to_processes_by_pids() {
+  local pids=("$@")
+
+  for pid in "${pids[@]}"; do
+    # Comprobar si el PID es válido
+    if [ -d "/proc/$pid" ]; then
+      local cmd_file="/proc/$pid/cmdline"
+      local progtoattach=$(tr '\0' ' ' < "$cmd_file" | awk '{print $1}')
+      if [ -n "$progtoattach" ]; then
+        local base_dir="$HOME/.scdebug"
+        local uuid=$(uuidgen)
+        local program_dir="$base_dir/$progtoattach"
+        if [ ! -d "$program_dir" ]; then
+          mkdir -p "$program_dir"
+        fi
+        local output_file="$program_dir/trace_$uuid.txt"
+        # Ejecuta strace en modo attach al proceso especificado por PID.
+        local strace_command="strace -o $output_file ${strace_options} -p $pid"
+        $strace_command &
+        local strace_pid=$!
+        if [ $? -ne 0 ]; then
+          echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
+        else
+          echo "Ejecución exitosa en modo attach para el proceso (PID: $pid, Comando: $progtoattach). Los resultados se guardan en $output_file."
+        fi
+      else
+        echo "No se pudo obtener el nombre del comando para el PID: $pid."
+      fi
+    else
+      echo "El PID $pid no es válido o el proceso no existe."
+    fi
+  done
+}
+
 # Función para ver la última traza de un programa
 view_latest_trace() {
   local progtoquery="$1"
@@ -156,6 +221,16 @@ case "$opcion" in
       progtoattach="$4"
       attach_to_process "$progtoattach" # Hacer el nattch
     fi
+  ;;
+  -nattch)
+    shift
+    program_names=("$@")
+    attach_to_processes "${program_names[@]}"
+  ;;
+  -pattch)
+  shift
+    pids=("$@")
+    attach_to_processes_by_pids "${pids[@]}"
   ;;
   -v)
     shift
