@@ -11,7 +11,7 @@ help() {
 }
 
 # Función para mostrar información sobre los procesos del usuario.
-show_user_processes() {
+ProcesosDeUsuario() {
   echo "-----------------------------------------------------------"
   echo "    PROCESOS DEL USUARIO (PID - NOMBRE DEL PROCESO)"
   echo "-----------------------------------------------------------"
@@ -20,7 +20,7 @@ show_user_processes() {
 
 
 # Función para adjuntar a un proceso en ejecución con strace.
-attach_to_process() {
+AttachProceso() {
   local progtoattach="$1"
   # Encuentra el PID del proceso más reciente ejecutado por el usuario con el nombre especificado.
   local newest_pid=$(pgrep -o -u $USER "$progtoattach" | tail -n 1)
@@ -48,7 +48,7 @@ attach_to_process() {
 }
 
 # Función para adjuntar a un proceso en ejecución con strace.
-attach_to_processes() {
+AttachProcesos() {
   local program_names=("$@")
   
   for progtoattach in "${program_names[@]}"; do
@@ -78,7 +78,7 @@ attach_to_processes() {
 }
 
 # Función para adjuntar a procesos en ejecución con strace a partir de los PIDs especificados.
-attach_to_processes_by_pids() {
+AttachPids() {
   local pids=("$@")
 
   for pid in "${pids[@]}"; do
@@ -113,7 +113,7 @@ attach_to_processes_by_pids() {
 }
 
 # Función para ver la última traza de un programa
-view_latest_trace() {
+VerUltimaTraza() {
   local progtoquery="$1"
   local base_dir="$HOME/.scdebug/$progtoquery"
   local latest_file=$(ls -t "$base_dir" | head -1)
@@ -130,7 +130,7 @@ view_latest_trace() {
 }
 
 # Función para mostrar todas las trazas de un programa en orden de más reciente a más antiguo.
-view_all_traces() {
+VerTodasLasTrazas() {
   local progtoquery="$1"
   local base_dir="$HOME/.scdebug/$progtoquery"
   if [ ! -d "$base_dir" ]; then
@@ -154,7 +154,7 @@ view_all_traces() {
 }
 
 # Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
-kill_all_processes() {
+MatarProcesos() {
   # Obtener el nombre de usuario actual
   current_user=$(whoami)
 
@@ -203,7 +203,7 @@ run_strace() {
 }
 
 # Visualizar los procesos de usuario
-show_user_processes
+ProcesosDeUsuario
 
 opcion="$1"
 case "$opcion" in
@@ -211,7 +211,7 @@ case "$opcion" in
     help
   ;;
   -k)
-    kill_all_processes # Matar todos los procesos
+    MatarProcesos # Matar todos los procesos
   ;;
   -sto)
     strace_options="$2" # Opciones para el strace
@@ -219,29 +219,29 @@ case "$opcion" in
     run_strace "$program_to_strace"
     if [ "$3" == "-nattch" ]; then
       progtoattach="$4"
-      attach_to_process "$progtoattach" # Hacer el nattch
+      AttachProceso "$progtoattach" # Hacer el nattch
     fi
   ;;
   -nattch)
     shift
     program_names=("$@")
-    attach_to_processes "${program_names[@]}"
+    AttachProcesos "${program_names[@]}"
   ;;
   -pattch)
   shift
     pids=("$@")
-    attach_to_processes_by_pids "${pids[@]}"
+    AttachPids "${pids[@]}"
   ;;
   -v)
     shift
     progtoquery="$1"
-    view_latest_trace "$progtoquery"
+    VerUltimaTraza "$progtoquery"
     exit 0
   ;;
   -vall)
     shift
     progtoquery="$2"
-    view_all_traces "$progtoqery"
+    VerTodasLasTrazas "$progtoqery"
     exit 0
   ;;
   *)
