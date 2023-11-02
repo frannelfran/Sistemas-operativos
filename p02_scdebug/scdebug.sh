@@ -201,9 +201,31 @@ run_strace() {
     echo "Ejecución exitosa. Los resultados se guardan en $output_file."
   fi
 }
+# Modificación
+print_traces() {
+  local base_dir="$HOME/.scdebug" # accedo al driectorio base
+  
+  echo "DIR NUM FICHERO_MAS_RECIENTE"
+  echo "------------------------------------------------"
+  
+  for subdir in "$base_dir"/*; do
+    if [ -d "$subdir" ]; then
+      local dir_name=$(basename "$subdir")
+      local num_files=$(find "$subdir" -type f | wc -l) # Número de archivos del subdirectorio
+      local latest_file=$(ls -t "$subdir" | head -1) # Fichero mas reciente
+      local latest_file_path="$subdir/$latest_file" 
+      local latest_trace_time=$(date -d @"$(stat -c %Y "$latest_file_path")" "+%b %e %H:%M") # Tiempo más reciente del fichero
+      echo "$dir_name $num_files $latest_trace_time $latest_file"
+    fi
+  done
+  echo "------------------------------------------------"
+}
 
 # Visualizar los procesos de usuario
 ProcesosDeUsuario
+# Información de todos los subdirectorios
+print_traces
+
 
 opcion="$1"
 case "$opcion" in
