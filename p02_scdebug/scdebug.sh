@@ -226,7 +226,6 @@ ProcesosDeUsuario
 # Información de todos los subdirectorios
 print_traces
 
-
 opcion="$1"
 case "$opcion" in
   -h)
@@ -265,8 +264,5 @@ case "$opcion" in
     progtoquery="$2"
     VerTodasLasTrazas "$progtoqery"
     exit 0
-  ;;
-  *)
-    run_strace "$@"
   ;;
 esac
