@@ -33,13 +33,15 @@ AttachProceso() {
   local base_dir="$HOME/.scdebug"
   local uuid=$(uuidgen)
   local program_dir="$base_dir/$progtoattach"
+  # Crear el subdirectorio si no existe
   if [ ! -d "$program_dir" ]; then
     mkdir -p "$program_dir"
   fi
   local output_file="$program_dir/trace_$uuid.txt"
   # Ejecuta strace en modo attach al proceso encontrado.
   local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
-  $strace_command &
+  # Redirigir la salida al fichero
+  $strace_command &> "$output_file"
   local strace_pid=$!
   if [ $? -ne 0 ]; then
     echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
