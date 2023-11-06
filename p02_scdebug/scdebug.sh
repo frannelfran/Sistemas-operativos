@@ -39,8 +39,9 @@ AttachProceso() {
   fi
   local output_file="$program_dir/trace_$uuid.txt"
   # Ejecuta strace en modo attach al proceso encontrado.
-  local strace_command="strace -o >(tee \"$output_file\") ${strace_options} -p $newest_pid"
-  eval $strace_command
+  local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
+  # Redirigir la salida al fichero
+  $strace_command &> "$output_file"
   local strace_pid=$!
   if [ $? -ne 0 ]; then
     echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
@@ -162,7 +163,7 @@ MatarProcesos() {
     tracer_pid=$(awk 'NR==8' /proc/$process_pid/status 2> /dev/null | awk '{print $2}')
     # Buscamos los procesos que estén siendo ejecutados
     if [ "$tracer_pid" != "0" ] && [ ! -z "$tracer_pid" ]; then
-      # Matamos al rpoceso trazador y luego el proceso trazado
+      # Matamos al proceso trazador y luego el proceso trazado
       kill $tracer_pid
       kill $process_pid
     fi
@@ -207,50 +208,56 @@ StopAction() {
 
 # Visualizar los procesos de usuario
 ProcesosDeUsuario
-
-opcion="$1"
-case "$opcion" in
-  -h)
-    help
-  ;;
-  -k)
-    MatarProcesos # Matar todos los procesos
-  ;;
-  -sto)
-    strace_options="$2" # Opciones para el strace
-    if [ "$3" == "-nattch" ]; then
-      progtoattach="$4"
-      AttachProceso "$progtoattach" # Hacer el nattch
+while [ -n "$1" ]; do
+  opcion="$1"
+  case "$opcion" in
+    -h)
+      help
+    ;;
+    -k)
+      MatarProcesos # Matar todos los procesos
+    ;;
+    -sto)
+      strace_options="$2" # Opciones para el strace
+      if [ "$3" == "-nattch" ]; then
+        progtoattach="$4"
+        AttachProceso "$progtoattach" # Hacer el nattch
+        shift 3
+      fi 
+      program_to_strace="$3" # Programa para hacer el strace
+      shift 2
+      run_strace "$program_to_strace"
+      break
+    ;;
+    -nattch)
+      shift
+      program_names=("$@")
+      AttachProcesos "${program_names[@]}"
+      break
+    ;;
+    -pattch)
+      shift
+      pids=("$@")
+      AttachPids "${pids[@]}"
+      break
+    ;;
+    -v)
+      shift
+      progtoquery="$1"
+      VerUltimaTraza "$progtoquery"
       exit 0
-    fi
-    program_to_strace="$3" # Programa para hacer el strace
-    run_strace "$program_to_strace"
-  ;;
-  -nattch)
-    shift
-    program_names=("$@")
-    AttachProcesos "${program_names[@]}"
-  ;;
-  -pattch)
-  shift
-    pids=("$@")
-    AttachPids "${pids[@]}"
-  ;;
-  -v)
-    shift
-    progtoquery="$1"
-    VerUltimaTraza "$progtoquery"
-    exit 0
-  ;;
-  -vall)
-    shift
-    progtoquery="$2"
-    VerTodasLasTrazas "$progtoqery"
-    exit 0
-  ;;
-  -S)
-    commName="$2"
-    StopAction "$commName" "$@"
-    exit 0
-  ;;
-esac
+    ;;
+    -vall)
+      shift
+      progtoquery="$2"
+      VerTodasLasTrazas "$progtoqery"
+      break
+    ;;
+    -S)
+      commName="$2"
+      shift 2
+      StopAction "$commName" "$@"
+      break
+    ;;
+  esac
+done
