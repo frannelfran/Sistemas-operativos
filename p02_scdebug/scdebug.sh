@@ -1,4 +1,4 @@
-#!/bin/bash
+#!./ptbash
 
 # Función de ayuda para mostrar información sobre cómo usar el script.
 help() {
@@ -8,6 +8,8 @@ help() {
   echo "-nattch progtoattach: Monitoriza un proceso existente por nombre."
   echo "-v: Muestra la última traza de un programa."
   echo "-vall: Muestra todas las trazas de un programa, ordenadas de más reciente a más antigua."
+  echo "-pattch Monitoriza varios procesos por sus PIDS"
+  echo "-S Para la ejecución de un proceso"
 }
 
 # Función para mostrar información sobre los procesos del usuario.
@@ -155,28 +157,15 @@ VerTodasLasTrazas() {
 
 # Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
 MatarProcesos() {
-  # Obtener el nombre de usuario actual
-  current_user=$(whoami)
-
-  # Obtener una lista de todos los PID de los procesos trazadores
-  tracer_pids=$(pgrep -u $current_user)
-
-  for pid in $tracer_pids; do
-    if [ $pid != $$ ]; then  # No mate el propio script
-      echo "Terminando proceso trazador: $pid"
-      kill -9 $pid
+  for process_pid in $(ps -u $USER -o pid=); do
+    tracer_pid=$(awk 'NR==8' /proc/$process_pid/status 2> /dev/null | awk '{print $2}')
+    # Buscamos los procesos que estén siendo ejecutados
+    if [ "$tracer_pid" != "0" ] && [ ! -z "$tracer_pid" ]; then
+      # Matamos al rpoceso trazador y luego el proceso trazado
+      kill $tracer_pid
+      kill $process_pid
     fi
-  done
-
-  # Obtener una lista de todos los PID de los procesos trazados
-  traced_pids=$(pgrep -u $current_user -P 1)  # Procesos no trazadores con padre igual a 1 (init)
-
-  for pid in $traced_pids; do
-    if [ $pid != $$ ]; then  # No mate el propio script
-      echo "Terminando proceso trazado: $pid"
-      kill -9 $pid
-    fi
-  done
+  done;
 }
 
 # Función para ejecutar y monitorear un programa con strace.
@@ -201,30 +190,25 @@ run_strace() {
     echo "Ejecución exitosa. Los resultados se guardan en $output_file."
   fi
 }
-# Modificación
-print_traces() {
-  local base_dir="$HOME/.scdebug" # accedo al driectorio base
-  
-  echo "DIR NUM FICHERO_MAS_RECIENTE"
-  echo "------------------------------------------------"
-  
-  for subdir in "$base_dir"/*; do
-    if [ -d "$subdir" ]; then
-      local dir_name=$(basename "$subdir")
-      local num_files=$(find "$subdir" -type f | wc -l) # Número de archivos del subdirectorio
-      local latest_file=$(ls -t "$subdir" | head -1) # Fichero mas reciente
-      local latest_file_path="$subdir/$latest_file" 
-      local latest_trace_time=$(date -d @"$(stat -c %Y "$latest_file_path")" "+%b %e %H:%M") # Tiempo más reciente del fichero
-      echo "$dir_name $num_files $latest_trace_time $latest_file"
-    fi
-  done
-  echo "------------------------------------------------"
+
+# Función para la "acción stop"
+StopAction() {
+  local commName="$1"
+  shift
+  local LaunchProg=("$@")  # El programa a ejecutar junto con sus argumentos
+
+  # 1) Forzar el nombre de comando
+  echo -n "traced_$commName" > /proc/$$/comm
+
+  # 2) Detener el script con SIGSTOP
+  kill -SIGSTOP $$
+
+  # 3) Reanudar la ejecución con el programa a monitorizar
+  exec "${LaunchProg[@]}"
 }
 
 # Visualizar los procesos de usuario
 ProcesosDeUsuario
-# Información de todos los subdirectorios
-print_traces
 
 opcion="$1"
 case "$opcion" in
@@ -263,6 +247,11 @@ case "$opcion" in
     shift
     progtoquery="$2"
     VerTodasLasTrazas "$progtoqery"
+    exit 0
+  ;;
+  -S)
+    commName="$2"
+    StopAction "$commName" "$@"
     exit 0
   ;;
 esac
