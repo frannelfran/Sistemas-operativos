@@ -39,9 +39,8 @@ AttachProceso() {
   fi
   local output_file="$program_dir/trace_$uuid.txt"
   # Ejecuta strace en modo attach al proceso encontrado.
-  local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
-  # Redirigir la salida al fichero
-  $strace_command &> "$output_file"
+  local strace_command="strace -o >(tee \"$output_file\") ${strace_options} -p $newest_pid"
+  eval $strace_command
   local strace_pid=$!
   if [ $? -ne 0 ]; then
     echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
@@ -152,7 +151,7 @@ VerTodasLasTrazas() {
     echo "=============== COMMAND: $progtoquery ======================="
     echo "=============== TRACE FILE: $trace_file ======================="
     echo "=============== TIME: $trace_time ======================="
-    cat "$trace_path"
+    echo "$trace_path"
     echo "-----------------------------------------------------------"
   done
 }
@@ -198,13 +197,10 @@ StopAction() {
   local commName="$1"
   shift
   local LaunchProg=("$@")  # El programa a ejecutar junto con sus argumentos
-
   # 1) Forzar el nombre de comando
   echo -n "traced_$commName" > /proc/$$/comm
-
   # 2) Detener el script con SIGSTOP
   kill -SIGSTOP $$
-
   # 3) Reanudar la ejecución con el programa a monitorizar
   exec "${LaunchProg[@]}"
 }
