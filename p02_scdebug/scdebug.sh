@@ -220,12 +220,13 @@ case "$opcion" in
   ;;
   -sto)
     strace_options="$2" # Opciones para el strace
-    program_to_strace="$3" # Programa para hacer el strace
-    run_strace "$program_to_strace"
     if [ "$3" == "-nattch" ]; then
       progtoattach="$4"
       AttachProceso "$progtoattach" # Hacer el nattch
+      exit 0
     fi
+    program_to_strace="$3" # Programa para hacer el strace
+    run_strace "$program_to_strace"
   ;;
   -nattch)
     shift
