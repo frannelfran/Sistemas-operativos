@@ -33,14 +33,14 @@ run_strace() {
   # argv1 = programa
   # argv2 = opciones del strace
   local program="$1"
-  local strace_options="$2"
+  local strace_options="$2" # Opciones de strace como una cadena
   local nattch_pid="$3"
   # Llamar a la función crear_subdirectorio
   output_file=$(crear_subdirectorio "$program")
   # Verificar si la opción -nattch está habilitada
   if [ -n "$nattch_pid" ]; then
     # Ejecutar strace en el proceso especificado
-    strace "$strace_options" -p "$nattch_pid" -o "$output_file" & sleep 0.1 > "$output_file"
+    strace $strace_options -p "$nattch_pid" -o "$output_file" &
   else
     # Ejecutar el strace con las opciones
     strace $strace_options -o "$output_file" "$program" &
@@ -48,7 +48,7 @@ run_strace() {
 }
 
 # main
-strace_options=""
+strace_options=()
 attach_program=""
 recent_pid=""
 while [ -n "$1" ]; do
@@ -60,15 +60,12 @@ while [ -n "$1" ]; do
     ;;
     -sto)
       strace_options="$1"
-      echo "$strace_options"
     ;;
     -nattch)
       attach_program="$1"
-      echo "$attach_program"
     ;;
     *)
       program="$1"
-      echo "$program"
     ;;
   esac
   shift
