@@ -1,7 +1,7 @@
 #!./ptbash
 
 help() {
-  echo "Uso: scdebug [-h] [-sto arg] [-v | -vall] [-nattch progtoattach] [prog [arg1 …]]"
+  echo "Uso: scdebug [-h] [-sto arg] [-v | -vall] [-nattch program] [prog [arg1 …]]"
 }
 
 
@@ -26,11 +26,15 @@ crear_subdirectorio() {
 get_recent_pid() {
   # argv1 = programa para obtener su PID
   local program="$1"
-  recent_pid=$(pgrep -o -u $USER "$progtoattach" | tail -n 1)
-  echo "$recent_pid" # Obtener el PID
+  pid=$(pgrep -o -u $USER "$program" | tail -n 1)
+  if [ -z "$pid" ]; then
+      echo "No se encontró un proceso en ejecución con el nombre: $program."
+      exit 1
+    fi
+  echo "$pid"
 }
 
-# Ejecutar strace
+# Ejecutar strace (con nattch o sin nattch)
 run_strace() {
   # argv1 = programa
   # argv2 = opciones del strace
@@ -42,11 +46,25 @@ run_strace() {
   # Verificar si la opción -nattch está habilitada
   if [ -n "$nattch_pid" ]; then
     # Ejecutar strace en el proceso especificado
-    strace $strace_options -p "$nattch_pid" -o "$output_file" & sleep 0.1 > "$output_file"
+    strace $strace_options -p "$nattch_pid" -o "$output_file" & sleep 0.1> "$output_file"
   else
     # Ejecutar el strace con las opciones
     strace $strace_options -o "$output_file" "$program" &
   fi
+}
+
+# Función para matar los procesos trazadores del ususario
+MatarProcesos() {
+  for process_pid in $(ps -u $USER -o pid=); do
+    tracer_pid=$(awk 'NR==8' /proc/$process_pid/status 2> /dev/null | awk '{print $2}')
+    # Buscamos los procesos que estén siendo ejecutados
+    if [ "$tracer_pid" != "0" ] && [ ! -z "$tracer_pid" ]; then
+      # Matamos al proceso trazador y luego el proceso trazado
+      kill $tracer_pid
+      kill $process_pid
+      echo "Eliminando el proceso con PID: $process_pid"
+    fi
+  done;
 }
 
 
@@ -71,16 +89,18 @@ while [ -n "$1" ]; do
       help
       exit 0
     ;;
+    -k)
+      MatarProcesos # Matar los procesos trazadores
+      exit 0
+    ;;
     -sto)
-      #shift
-      strace_options="$2"
+      strace_options="$2" # Almacenar las opciones del strace
     ;;
     -nattch)
-      #shift
-      attach_program="$1"
+      attach_program="$1" # Verificar si se quiere hacer un attach al programa
     ;;
     *)
-      program="$1"
+      program="$1" # Programa
     ;;
   esac
   shift
@@ -90,7 +110,7 @@ echo "$attach_program"
 echo "$program"
 # Si se proporciona la opción -nattch, obtener el PID del proceso más reciente
 if [ -n "$attach_program" ]; then
-  recent_pid=$(get_recent_pid "$attach_program")
+  recent_pid=$(get_recent_pid "$program")
   echo "$recent_pid"
 fi
 run_strace "$program" "$strace_options" "$recent_pid"
