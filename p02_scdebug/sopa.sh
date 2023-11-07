@@ -4,6 +4,7 @@ help() {
   echo "Uso: scdebug [-h] [-sto arg] [-v | -vall] [-nattch progtoattach] [prog [arg1 …]]"
 }
 
+
 # Función para crear las carpetas con los uuid
 crear_subdirectorio() {
   # argv1 = programa
@@ -20,11 +21,12 @@ crear_subdirectorio() {
   echo "$output_file"
 }
 
+
 # Función para obtener el PID del proceso más reciente con el nombre del programa
 get_recent_pid() {
   # argv1 = programa para obtener su PID
   local program="$1"
-  local recent_pid=$(pgrep -o "$program")
+  recent_pid=$(pgrep -o -u $USER "$progtoattach" | tail -n 1)
   echo "$recent_pid" # Obtener el PID
 }
 
@@ -40,14 +42,25 @@ run_strace() {
   # Verificar si la opción -nattch está habilitada
   if [ -n "$nattch_pid" ]; then
     # Ejecutar strace en el proceso especificado
-    strace $strace_options -p "$nattch_pid" -o "$output_file" &
+    strace $strace_options -p "$nattch_pid" -o "$output_file" & sleep 0.1 > "$output_file"
   else
     # Ejecutar el strace con las opciones
     strace $strace_options -o "$output_file" "$program" &
   fi
 }
 
+
+# Función para mostrar información sobre los procesos del usuario.
+user_process() {
+  echo "-----------------------------------------------------------"
+  echo "    PROCESOS DEL USUARIO (PID - NOMBRE DEL PROCESO)"
+  echo "-----------------------------------------------------------"
+  ps -U $USER -o pid,comm --sort=start
+}
+
+
 # main
+user_process
 strace_options=()
 attach_program=""
 recent_pid=""
@@ -59,9 +72,11 @@ while [ -n "$1" ]; do
       exit 0
     ;;
     -sto)
-      strace_options="$1"
+      #shift
+      strace_options="$2"
     ;;
     -nattch)
+      #shift
       attach_program="$1"
     ;;
     *)
@@ -70,11 +85,12 @@ while [ -n "$1" ]; do
   esac
   shift
 done
+echo "$strace_options" 
+echo "$attach_program" 
+echo "$program"
 # Si se proporciona la opción -nattch, obtener el PID del proceso más reciente
 if [ -n "$attach_program" ]; then
   recent_pid=$(get_recent_pid "$attach_program")
+  echo "$recent_pid"
 fi
 run_strace "$program" "$strace_options" "$recent_pid"
-
-
-
