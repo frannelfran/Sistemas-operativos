@@ -34,6 +34,16 @@ get_recent_pid() {
   echo "$pid"
 }
 
+
+# Función para obtener el nombre del comando dado el PID
+get_command_name() {
+  local pid="$1"
+  local command_name
+  command_name=$(ps -o comm= -p "$pid")
+  echo "$command_name"
+}
+
+
 # Ejecutar strace (con nattch o sin nattch)
 run_strace() {
   # argv1 = programa
@@ -53,6 +63,7 @@ run_strace() {
     eval "strace $strace_options -o $output_file $program" 2>&1
   fi
 }
+
 
 # Hacer attach a los procesos según los PIDS
 AttachPids() {
@@ -83,7 +94,6 @@ MatarProcesos() {
       # Matamos al proceso trazador y luego el proceso trazado
       kill $tracer_pid 2> /dev/null
       kill -9 $process_pid 2> /dev/null
-      echo "Eliminando el proceso con PID: $process_pid"
     fi
   done;
 }
@@ -103,6 +113,7 @@ VerUltimaTraza() {
   echo "=============== COMMAND: $progtoquery ======================="
   echo "=============== TRACE FILE: $latest_file ======================="
   echo "=============== TIME: $latest_trace_time ======================="
+  cat "$latest_trace_file"
 }
 
 
@@ -110,9 +121,7 @@ VerUltimaTraza() {
 VerTodasLasTrazas() {
   # argv1 = programa
   local program="$1"
-  echo "$program"
   local debug_dir="$HOME/.scdebug/$program"
-  echo "$debug_dir"
 
   # Verificar que existe el directorio
   if [ ! -d "$debug_dir" ]; then
@@ -129,6 +138,7 @@ VerTodasLasTrazas() {
     echo "=============== TRACE FILE: $file ==============="
     file_mod_time=$(date -r "$file")
     echo "=============== TIME: $file_mod_time ==============="
+    cat "$file"
   done
 }
 
@@ -138,7 +148,19 @@ user_process() {
   echo "-----------------------------------------------------------"
   echo "    PROCESOS DEL USUARIO (PID - NOMBRE DEL PROCESO)"
   echo "-----------------------------------------------------------"
-  # ps -U $USER -o pid,comm --sort=start
+  # Obtén el ID de usuario actual
+user_id=$(id -u)
+
+  # Utiliza ps para obtener la lista de procesos del usuario actual
+  # Filtra los procesos que tienen TracerPid distinto de 0 (están siendo trazados)
+  ps -U $user_id -o pid,comm --no-headers | while read -r pid name; do
+  if [ -f "/proc/$pid/status" ]; then
+    tracer_pid=$(cat "/proc/$pid/status" | awk -F '\t' '/TracerPid/ {print $2}')
+      if [[ "$tracer_pid" =~ ^[0-9]+$ && "$tracer_pid" -ne 0 ]]; then
+        echo "$pid $name"
+      fi
+    fi
+  done
 }
 
 
@@ -173,15 +195,24 @@ while [ -n "$1" ]; do
         run_strace $1 $strace_options $recent_pid & sleep 0.1
       done
     ;;
+    -pattch)
+      while [ "$1" != "" ]; do
+        shift
+        if [ "$1" = "" ]; then
+          break;
+        fi
+        pid="$1"
+        command_name=$(get_command_name "$pid")
+        strace -p "$pid" -o "$command_name" &
+      done
+    ;;
     -v)
       progtoquery="$2"
-      echo "$progtoquery"
       VerUltimaTraza "$progtoquery" # Ver la última traza que se le ha echo al programa proporcionado
       exit 0
     ;;
     -vall)
       progtoqery="$2"
-      echo "$progtoqery"
       VerTodasLasTrazas "$progtoqery"
       exit 0
     ;;
@@ -189,6 +220,8 @@ while [ -n "$1" ]; do
       program="$1" # Programa
     ;;
   esac
+  # Mostrar los procesos que están siendo ejecutados
+  user_process
   shift
 done
 
@@ -197,6 +230,3 @@ if [ -z "$program" ]; then
   echo "Pruebe -h para más información"
   exit 0
 fi
-
-# Mostrar los procesos que están siendo ejecutados
-user_process
