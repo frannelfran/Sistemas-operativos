@@ -41,6 +41,7 @@ run_strace() {
   local program="$1"
   local strace_options="$2" # Opciones de strace como una cadena
   local nattch_pid="$3"
+  
   # Llamar a la función crear_subdirectorio
   output_file=$(crear_subdirectorio "$program")
   # Verificar si la opción -nattch está habilitada
@@ -122,7 +123,6 @@ user_process() {
 
 
 # main
-
 strace_options=()
 attach_program=""
 recent_pid=""
@@ -162,9 +162,9 @@ while [ -n "$1" ]; do
   shift
 done
 
-# Si no se introduce nada mostrar mensaje de error
-if [[ -z "$program" || "$1" != "-v" || "$1" != "-vall" ]]; then
-  echo "Utiliza -h para más información"
+# Si no se introduce nada mostrar mensaje de ayuda
+if [ -z "$program" ]; then
+  echo "Pruebe -h para más información"
   exit 0
 fi
 
