@@ -41,7 +41,7 @@ AttachProceso() {
   # Ejecuta strace en modo attach al proceso encontrado.
   local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
   # Redirigir la salida al fichero
-  $strace_command &> "$output_file"
+  $strace_command & sleep 0.1 > "$output_file"
   local strace_pid=$!
   if [ $? -ne 0 ]; then
     echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
