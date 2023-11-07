@@ -98,6 +98,7 @@ MatarProcesos() {
   done;
 }
 
+
 # Función para ver la última traza que se a hecho
 VerUltimaTraza() {
   # argv1 = programa
@@ -149,7 +150,7 @@ user_process() {
   echo "    PROCESOS DEL USUARIO (PID - NOMBRE DEL PROCESO)"
   echo "-----------------------------------------------------------"
   # Obtén el ID de usuario actual
-user_id=$(id -u)
+  user_id=$(id -u)
 
   # Utiliza ps para obtener la lista de procesos del usuario actual
   # Filtra los procesos que tienen TracerPid distinto de 0 (están siendo trazados)
@@ -164,6 +165,8 @@ user_id=$(id -u)
 }
 
 
+# Mostrar los procesos que están siendo ejecutados
+user_process
 # main
 strace_options=()
 attach_program=""
@@ -196,14 +199,15 @@ while [ -n "$1" ]; do
       done
     ;;
     -pattch)
-      while [ "$1" != "" ]; do
+      while [ "$1" != "" ] && [ "$1" != "-sto" ]; do
         shift
         if [ "$1" = "" ]; then
           break;
         fi
         pid="$1"
         command_name=$(get_command_name "$pid")
-        strace -p "$pid" -o "$command_name" &
+        IFS=:
+        run_strace $command_name $strace_options $pid & sleep 0.1
       done
     ;;
     -v)
@@ -220,8 +224,6 @@ while [ -n "$1" ]; do
       program="$1" # Programa
     ;;
   esac
-  # Mostrar los procesos que están siendo ejecutados
-  user_process
   shift
 done
 
