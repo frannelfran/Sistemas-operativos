@@ -70,6 +70,7 @@ run_strace() {
   fi
 }
 
+
 # Función para la "acción stop"
 StopAction() {
   local commName="$1"
@@ -233,11 +234,6 @@ while [ -n "$1" ]; do
         kill -CONT "$pid"
       done
     ;;
-    -gc | -ge)
-      
-    
-
-    ;;
     -v)
       progtoquery="$2"
       VerUltimaTraza "$progtoquery" # Ver la última traza que se le ha echo al programa proporcionado
@@ -254,9 +250,3 @@ while [ -n "$1" ]; do
   esac
   shift
 done
-
-# Si no se introduce nada mostrar mensaje de ayuda
-if [ -z "$program" ]; then
-  echo "Pruebe -h para más información"
-  exit 0
-fi
