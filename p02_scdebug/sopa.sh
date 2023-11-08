@@ -35,10 +35,16 @@ get_recent_pid() {
 }
 
 
+# Función para obtener la lista de pids de procesos detenidos
+obtener_pids_detenidos() {
+  pids=$(pgrep -u "$USER" -x "traced_.*")
+  echo "$pids"
+}
+
+
 # Función para obtener el nombre del comando dado el PID
 get_command_name() {
   local pid="$1"
-  local command_name
   command_name=$(ps -o comm= -p "$pid")
   echo "$command_name"
 }
@@ -187,7 +193,7 @@ while [ -n "$1" ]; do
         prog_args="$program_args $1"
         shift
       done
-      StopAction "$command_name" "$prog" "$prog_args"
+      StopAction "$commName" "$prog" "$prog_args"
       exit 1
     ;;
     -sto)
@@ -216,6 +222,21 @@ while [ -n "$1" ]; do
         IFS=:
         run_strace $command_name $strace_options $pid & sleep 0.1
       done
+    ;;
+    -g)
+      pids=$(obtener_pids_detenidos)
+      for pid in $pids; do
+        name=$(get_command_name "$pid")
+        file_out=$(crear_subdirectorio "$name")
+        strace -o "$file_out" -p "$pid" & sleep 0.1
+        # Activar la señal CONT en el proceso
+        kill -CONT "$pid"
+      done
+    ;;
+    -gc | -ge)
+      
+    
+
     ;;
     -v)
       progtoquery="$2"
