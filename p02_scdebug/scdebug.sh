@@ -63,7 +63,7 @@ run_strace() {
   # Verificar si la opción -nattch está habilitada
   if [ -n "$nattch_pid" ]; then
     # Ejecutar strace en el proceso especificado
-    eval "strace $strace_options -p $nattch_pid -o $output_file" 2>&1
+    eval "strace $strace_options -p $nattch_pid -o $output_file" 2>&1 
   else
     # Ejecutar el strace con las opciones
     eval "strace $strace_options -o $output_file $program" 2>&1
@@ -208,6 +208,7 @@ while [ -n "$1" ]; do
         if [ "$1" = "" ]; then
           exit 0
         fi
+        # Si se detecta el -pattch hacer el -nattch con los PIDS de los procesos
         if [ "$1" = "-pattch" ]; then
           # Funcionamiento del -pattch
           while [ "$1" != "" ]; do
@@ -215,7 +216,7 @@ while [ -n "$1" ]; do
             if [ "$1" = "" ]; then
               exit 0
             fi
-            pid="$1"
+            pid="$1" # Pid
             command_name=$(get_command_name "$pid")
             IFS=:
             run_strace $command_name $strace_options $pid & sleep 0.1
