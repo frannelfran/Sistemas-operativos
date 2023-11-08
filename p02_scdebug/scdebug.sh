@@ -63,10 +63,10 @@ run_strace() {
   # Verificar si la opción -nattch está habilitada
   if [ -n "$nattch_pid" ]; then
     # Ejecutar strace en el proceso especificado
-    eval "strace $strace_options -p $nattch_pid -o $output_file" 2>&1 
+    eval "strace $strace_options -p $nattch_pid -o $output_file" 2>&1 | tee -a $output_file
   else
     # Ejecutar el strace con las opciones
-    eval "strace $strace_options -o $output_file $program" 2>&1
+    eval "strace $strace_options -o $output_file $program" 2>&1 | tee -a $output_file
   fi
 }
 
@@ -168,7 +168,7 @@ user_process() {
 
 
 # Mostrar los procesos que están siendo ejecutados
-user_process
+  user_process
 # main
 strace_options=()
 attach_program=""
