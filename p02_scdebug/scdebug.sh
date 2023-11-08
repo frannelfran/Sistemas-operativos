@@ -1,123 +1,109 @@
 #!./ptbash
 
-# Función de ayuda para mostrar información sobre cómo usar el script.
 help() {
-  echo "scdebug [-h] [-sto opciones] [-nattach progtoattach] [prog [arg1 ...]]"
-  echo "-h: Muestra este mensaje de ayuda."
-  echo "-sto opciones: Opciones personalizadas para strace (encerradas entre comillas)."
-  echo "-nattch progtoattach: Monitoriza un proceso existente por nombre."
-  echo "-v: Muestra la última traza de un programa."
-  echo "-vall: Muestra todas las trazas de un programa, ordenadas de más reciente a más antigua."
-  echo "-pattch Monitoriza varios procesos por sus PIDS"
-  echo "-S Para la ejecución de un proceso"
-}
-
-# Función para mostrar información sobre los procesos del usuario.
-ProcesosDeUsuario() {
-  echo "-----------------------------------------------------------"
-  echo "    PROCESOS DEL USUARIO (PID - NOMBRE DEL PROCESO)"
-  echo "-----------------------------------------------------------"
-  ps -U $USER -o pid,comm --sort=start
+  echo "Uso: scdebug [-h] [-sto arg] [-v | -vall] [-nattch program] [prog [arg1 …]]"
 }
 
 
-# Función para adjuntar a un proceso en ejecución con strace.
-AttachProceso() {
-  local progtoattach="$1"
-  # Encuentra el PID del proceso más reciente ejecutado por el usuario con el nombre especificado.
-  local newest_pid=$(pgrep -o -u $USER "$progtoattach" | tail -n 1)
-  if [ -z "$newest_pid" ]; then
-    echo "No se encontró un proceso en ejecución con el nombre: $progtoattach."
-    exit 1
+# Función para crear las carpetas con los uuid
+crear_subdirectorio() {
+  # argv1 = programa
+  # Obtener el nombre del programa y generar un UUID
+  local program="$1"
+  uuid=$(uuidgen)
+  # Directorio de salida relativo al directorio home del usuario
+  output_dir="$HOME/.scdebug/$program"
+  output_file="$output_dir/trace_$uuid.txt"
+  # Crear el directorio de salida si no existe
+  if [ ! -d "$output_dir" ]; then
+    mkdir -p "$output_dir"
   fi
-  local base_dir="$HOME/.scdebug"
-  local uuid=$(uuidgen)
-  local program_dir="$base_dir/$progtoattach"
-  # Crear el subdirectorio si no existe
-  if [ ! -d "$program_dir" ]; then
-    mkdir -p "$program_dir"
-  fi
-  local output_file="$program_dir/trace_$uuid.txt"
-  # Ejecuta strace en modo attach al proceso encontrado.
-  local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
-  # Redirigir la salida al fichero
-  $strace_command & sleep 0.1 > "$output_file"
-  local strace_pid=$!
-  if [ $? -ne 0 ]; then
-    echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
-    exit 1
-  else
-    echo "Ejecución exitosa en modo attach. Los resultados se guardan en $output_file."
-  fi
+  echo "$output_file"
 }
 
-# Función para adjuntar a un proceso en ejecución con strace.
-AttachProcesos() {
-  local program_names=("$@")
+
+# Función para obtener el PID del proceso más reciente con el nombre del programa
+get_recent_pid() {
+  # argv1 = programa para obtener su PID
+  local program="$1"
+  pid=$(pgrep -o -u $USER "$program" | tail -n 1)
+  if [ -z "$pid" ]; then
+      echo "No se encontró un proceso en ejecución con el nombre: $program."
+      exit 1
+    fi
+  echo "$pid"
+}
+
+
+# Función para obtener la lista de pids de procesos detenidos
+obtener_pids_detenidos() {
+  pids=$(pgrep -u "$USER" -x "traced_.*")
+  echo "$pids"
+}
+
+
+# Función para obtener el nombre del comando dado el PID
+get_command_name() {
+  local pid="$1"
+  command_name=$(ps -o comm= -p "$pid")
+  echo "$command_name"
+}
+
+
+# Ejecutar strace (con nattch o sin nattch)
+run_strace() {
+  # argv1 = programa
+  # argv2 = opciones del strace
+  local program="$1"
+  local strace_options="$2" # Opciones de strace como una cadena
+  local nattch_pid="$3"
   
-  for progtoattach in "${program_names[@]}"; do
-    # Encuentra el PID del proceso más reciente ejecutado por el usuario con el nombre especificado.
-    local newest_pid=$(pgrep -o -u $USER "$progtoattach" | tail -n 1)
-    if [ -z "$newest_pid" ]; then
-      echo "No se encontró un proceso en ejecución con el nombre: $progtoattach."
-    else
-      local base_dir="$HOME/.scdebug"
-      local uuid=$(uuidgen)
-      local program_dir="$base_dir/$progtoattach"
-      if [ ! -d "$program_dir" ]; then
-        mkdir -p "$program_dir"
-      fi
-      local output_file="$program_dir/trace_$uuid.txt"
-      # Ejecuta strace en modo attach al proceso encontrado.
-      local strace_command="strace -o $output_file ${strace_options} -p $newest_pid"
-      $strace_command &
-      local strace_pid=$!
-      if [ $? -ne 0 ]; then
-        echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
-      else
-        echo "Ejecución exitosa en modo attach para el proceso: $progtoattach. Los resultados se guardan en $output_file."
-      fi
-    fi
-  done
+  # Llamar a la función crear_subdirectorio
+  output_file=$(crear_subdirectorio "$program")
+  # Verificar si la opción -nattch está habilitada
+  if [ -n "$nattch_pid" ]; then
+    # Ejecutar strace en el proceso especificado
+    eval "strace $strace_options -p $nattch_pid -o $output_file" 2>&1
+  else
+    # Ejecutar el strace con las opciones
+    eval "strace $strace_options -o $output_file $program" 2>&1
+  fi
 }
 
-# Función para adjuntar a procesos en ejecución con strace a partir de los PIDs especificados.
-AttachPids() {
-  local pids=("$@")
 
-  for pid in "${pids[@]}"; do
-    # Comprobar si el PID es válido
-    if [ -d "/proc/$pid" ]; then
-      local cmd_file="/proc/$pid/cmdline"
-      local progtoattach=$(tr '\0' ' ' < "$cmd_file" | awk '{print $1}')
-      if [ -n "$progtoattach" ]; then
-        local base_dir="$HOME/.scdebug"
-        local uuid=$(uuidgen)
-        local program_dir="$base_dir/$progtoattach"
-        if [ ! -d "$program_dir" ]; then
-          mkdir -p "$program_dir"
-        fi
-        local output_file="$program_dir/trace_$uuid.txt"
-        # Ejecuta strace en modo attach al proceso especificado por PID.
-        local strace_command="strace -o $output_file ${strace_options} -p $pid"
-        $strace_command &
-        local strace_pid=$!
-        if [ $? -ne 0 ]; then
-          echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
-        else
-          echo "Ejecución exitosa en modo attach para el proceso (PID: $pid, Comando: $progtoattach). Los resultados se guardan en $output_file."
-        fi
-      else
-        echo "No se pudo obtener el nombre del comando para el PID: $pid."
-      fi
-    else
-      echo "El PID $pid no es válido o el proceso no existe."
-    fi
-  done
+# Función para la "acción stop"
+StopAction() {
+  local commName="$1"
+  local prog="$2"
+  local prog_args="$3"
+
+  # 1) Forzar el nombre de comando
+  echo -n "traced_$commName" > /proc/$$/comm
+  # 2) Detener el script con SIGSTOP
+  kill -SIGSTOP $$
+  # 3) Reanudar la ejecución con el programa a monitorizar
+  prog="$prog $prog_args"
+  exec $prog
 }
 
-# Función para ver la última traza de un programa
+
+# Función para matar los procesos trazadores del ususario
+MatarProcesos() {
+  for process_pid in $(ps -u $USER -o pid=); do
+    tracer_pid=$(awk 'NR==8' /proc/$process_pid/status 2> /dev/null | awk '{print $2}')
+    # Buscamos los procesos que estén siendo ejecutados
+    if [ "$tracer_pid" != "0" ] && [ ! -z "$tracer_pid" ]; then
+      # Matamos al proceso trazador y luego el proceso trazado
+      kill $tracer_pid 2> /dev/null
+      kill -9 $process_pid 2> /dev/null
+    fi
+  done;
+}
+
+
+# Función para ver la última traza que se a hecho
 VerUltimaTraza() {
+  # argv1 = programa
   local progtoquery="$1"
   local base_dir="$HOME/.scdebug/$progtoquery"
   local latest_file=$(ls -t "$base_dir" | head -1)
@@ -133,131 +119,153 @@ VerUltimaTraza() {
   cat "$latest_trace_file"
 }
 
+
 # Función para mostrar todas las trazas de un programa en orden de más reciente a más antiguo.
 VerTodasLasTrazas() {
-  local progtoquery="$1"
-  local base_dir="$HOME/.scdebug/$progtoquery"
-  if [ ! -d "$base_dir" ]; then
-    echo "No se encontraron trazas para el programa: $progtoquery."
+  # argv1 = programa
+  local program="$1"
+  local debug_dir="$HOME/.scdebug/$program"
+
+  # Verificar que existe el directorio
+  if [ ! -d "$debug_dir" ]; then
+    echo "El directorio $debug_dir no existe."
     exit 1
   fi
-  local trace_files=($(ls -t "$base_dir"))
-  if [ ${#trace_files[@]} -eq 0 ]; then
-    echo "No se encontraron trazas para el programa: $progtoquery."
-    exit 1
-  fi
-  for trace_file in "${trace_files[@]}"; do
-    local trace_path="$base_dir/$trace_file"
-    local trace_time=$(stat -c %y "$trace_path")
-    echo "=============== COMMAND: $progtoquery ======================="
-    echo "=============== TRACE FILE: $trace_file ======================="
-    echo "=============== TIME: $trace_time ======================="
-    echo "$trace_path"
-    echo "-----------------------------------------------------------"
+
+  # Obtén la lista de archivos en el directorio ordenados por tiempo de modificación (más reciente a más antiguo)
+  file_list=$(find "$debug_dir" -maxdepth 1 -type f -exec stat --format="%Y %n" {} + | sort -n | awk '{print $2}')
+
+  # Itera sobre los archivos y muestra la cabecera y el contenido
+  for file in $file_list; do
+    echo "=============== COMMAND: $program ==============="
+    echo "=============== TRACE FILE: $file ==============="
+    file_mod_time=$(date -r "$file")
+    echo "=============== TIME: $file_mod_time ==============="
+    cat "$file"
   done
 }
 
-# Función para intentar terminar todos los procesos trazadores y trazados con la señal KILL.
-MatarProcesos() {
-  for process_pid in $(ps -u $USER -o pid=); do
-    tracer_pid=$(awk 'NR==8' /proc/$process_pid/status 2> /dev/null | awk '{print $2}')
-    # Buscamos los procesos que estén siendo ejecutados
-    if [ "$tracer_pid" != "0" ] && [ ! -z "$tracer_pid" ]; then
-      # Matamos al proceso trazador y luego el proceso trazado
-      kill $tracer_pid
-      kill $process_pid
+
+# Función para mostrar información sobre los procesos del usuario.
+user_process() {
+  echo "-----------------------------------------------------------"
+  echo "    PROCESOS TRAZADOS (PID - NOMBRE DEL PROCESO)"
+  echo "-----------------------------------------------------------"
+  # Obtén el ID de usuario actual
+  user_id=$(id -u)
+
+  # Utiliza ps para obtener la lista de procesos del usuario actual
+  # Filtra los procesos que tienen TracerPid distinto de 0 (están siendo trazados)
+  ps -U $user_id -o pid,comm --no-headers | while read -r pid name; do
+  if [ -f "/proc/$pid/status" ]; then
+    tracer_pid=$(cat "/proc/$pid/status" | awk -F '\t' '/TracerPid/ {print $2}')
+      if [[ "$tracer_pid" =~ ^[0-9]+$ && "$tracer_pid" -ne 0 ]]; then
+        echo "$pid $name"
+      fi
     fi
-  done;
+  done
 }
 
-# Función para ejecutar y monitorear un programa con strace.
-run_strace() {
-  local prog="$1"
-  local args=("$@")
-  local base_dir="$HOME/.scdebug"
-  local uuid=$(uuidgen)
-  local program_dir="$base_dir/$prog"
-  if [ ! -d "$program_dir" ]; then
-    mkdir -p "$program_dir"
-  fi
-  local output_file="$program_dir/trace_$uuid.txt"
-  # Ejecuta strace para rastrear el programa con opciones personalizadas si se proporcionan.
-  local strace_command="strace -o $output_file ${strace_options} $prog ${args[@]}"
-  $strace_command &
-  local strace_pid=$!
-  if [ $? -ne 0 ]; then
-    echo "Error: strace ha producido un error. Consulta el archivo $output_file para más detalles."
-    exit 1
-  else
-    echo "Ejecución exitosa. Los resultados se guardan en $output_file."
-  fi
-}
 
-# Función para la "acción stop"
-StopAction() {
-  local commName="$1"
-  shift
-  local LaunchProg=("$@")  # El programa a ejecutar junto con sus argumentos
-  # 1) Forzar el nombre de comando
-  echo -n "traced_$commName" > /proc/$$/comm
-  # 2) Detener el script con SIGSTOP
-  kill -SIGSTOP $$
-  # 3) Reanudar la ejecución con el programa a monitorizar
-  exec "${LaunchProg[@]}"
-}
-
-# Visualizar los procesos de usuario
-ProcesosDeUsuario
+# Mostrar los procesos que están siendo ejecutados
+user_process
+# main
+strace_options=()
+attach_program=""
+recent_pid=""
 while [ -n "$1" ]; do
   opcion="$1"
   case "$opcion" in
     -h)
       help
+      exit 0
     ;;
     -k)
-      MatarProcesos # Matar todos los procesos
+      MatarProcesos # Matar los procesos trazadores
+      exit 0
+    ;;
+    -S)
+      shift
+      commName="$1"
+      shift
+      prog=$1
+      shift
+      while [ "$1" != "" ]; do
+        prog_args="$program_args $1"
+        shift
+      done
+      StopAction "$commName" "$prog" "$prog_args"
+      exit 1
     ;;
     -sto)
-      strace_options="$2" # Opciones para el strace
-      if [ "$3" == "-nattch" ]; then
-        progtoattach="$4"
-        AttachProceso "$progtoattach" # Hacer el nattch
-        shift 3
-      fi 
-      program_to_strace="$3" # Programa para hacer el strace
-      shift 2
-      run_strace "$program_to_strace"
-      break
+      strace_options=$2 # Almacenar las opciones del strace
+      shift
     ;;
     -nattch)
-      shift
-      program_names=("$@")
-      AttachProcesos "${program_names[@]}"
-      break
+      # Hacer el nattch
+      while [ "$1" != "" ]; do
+        shift
+        if [ "$1" = "" ]; then
+          exit 0
+        fi
+        if [ "$1" = "-pattch" ]; then
+          # Funcionamiento del -pattch
+          while [ "$1" != "" ]; do
+            shift
+            if [ "$1" = "" ]; then
+              exit 0
+            fi
+            pid="$1"
+            command_name=$(get_command_name "$pid")
+            IFS=:
+            run_strace $command_name $strace_options $pid & sleep 0.1
+          done
+        fi
+        recent_pid=$(get_recent_pid $1)
+        # cambiar el separador, para que a la hora de enviar los argumentos, no separe las strings por espacios
+        IFS=:
+        run_strace $1 $strace_options $recent_pid & sleep 0.1
+      done
     ;;
     -pattch)
-      shift
-      pids=("$@")
-      AttachPids "${pids[@]}"
-      break
+      while [ "$1" != "" ] && [ "$1" != "-sto" ]; do
+        shift
+        if [ "$1" = "" ]; then
+          break;
+        fi
+        pid="$1"
+        command_name=$(get_command_name "$pid")
+        IFS=:
+        run_strace $command_name $strace_options $pid & sleep 0.1
+      done
+    ;;
+    -g)
+      pids=$(obtener_pids_detenidos)
+      for pid in $pids; do
+        name=$(get_command_name "$pid")
+        file_out=$(crear_subdirectorio "$name")
+        strace -o "$file_out" -p "$pid" & sleep 0.1
+        # Activar la señal CONT en el proceso
+        kill -CONT "$pid"
+      done
     ;;
     -v)
-      shift
-      progtoquery="$1"
-      VerUltimaTraza "$progtoquery"
+      progtoquery="$2"
+      VerUltimaTraza "$progtoquery" # Ver la última traza que se le ha echo al programa proporcionado
       exit 0
     ;;
     -vall)
-      shift
-      progtoquery="$2"
+      progtoqery="$2"
       VerTodasLasTrazas "$progtoqery"
-      break
+      exit 0
     ;;
-    -S)
-      commName="$2"
-      shift 2
-      StopAction "$commName" "$@"
-      break
+    *)
+      while [ "$1" != "" ]; do
+        program="$1" # Programa
+        run_strace "$program" "$strace_options" & sleep 0.1
+        shift
+      done
     ;;
   esac
+  shift
 done
