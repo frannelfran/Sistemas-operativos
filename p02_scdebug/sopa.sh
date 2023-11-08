@@ -64,24 +64,19 @@ run_strace() {
   fi
 }
 
+# Función para la "acción stop"
+StopAction() {
+  local commName="$1"
+  local prog="$2"
+  local prog_args="$3"
 
-# Hacer attach a los procesos según los PIDS
-AttachPids() {
- # Obtener la lista de PID proporcionados como argumentos
- local pids=$(pgrep ...)
- for pid in "$pids"; do
-   # Comprobar si el PID es válido
-   if [ -d "/proc/$pid" ]; then
-     local cmd_file="/proc/$pid/cmdline"
-     local progtoattach=$(tr '\0' ' ' < "$cmd_file" | awk '{print $1}')
-     if [ -n "$progtoattach" ]; then
-       output_file=$(crear_subdirectorio "$progtoattach")
-       # Ejecuta strace en modo attach al proceso especificado por PID.
-       strace $strace_options -p "$pid" -o "$output_file" & sleep 0.1 > "$output_file"
-     fi
-   fi
- done
- exit 0
+  # 1) Forzar el nombre de comando
+  echo -n "traced_$commName" > /proc/$$/comm
+  # 2) Detener el script con SIGSTOP
+  kill -SIGSTOP $$
+  # 3) Reanudar la ejecución con el programa a monitorizar
+  prog="$prog $prog_args"
+  exec $prog
 }
 
 
@@ -182,11 +177,23 @@ while [ -n "$1" ]; do
       MatarProcesos # Matar los procesos trazadores
       exit 0
     ;;
+    -S)
+      shift
+      commName="$1"
+      shift
+      prog=$1
+      shift
+      while [ "$1" != "" ]; do
+        prog_args="$program_args $1"
+        shift
+      done
+      StopAction "$command_name" "$prog" "$prog_args"
+      exit 1
+    ;;
     -sto)
       strace_options=$2 # Almacenar las opciones del strace
     ;;
     -nattch)
-      # attach_program="$1" # Verificar si se quiere hacer un attach al programa
       while [ "$1" != "" ] && [ "$1" != "-pattch" ]; do
         shift
         if [ "$1" = "" ] || [ "$1" = "-pattch" ]; then
