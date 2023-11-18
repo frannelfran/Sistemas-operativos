@@ -19,9 +19,17 @@ int main(int argc, char* argv[]) {
   ifstream file(argv[1]);
   // Comprobar el tamaño del fichero y si existe
   streampos size = file.tellg();
+  file.seekg(0, ios::end);
+  size = file.tellg() - size; // Obtener el tamaño del fichero en bytes
   if (size > 1024 || !file.is_open()) {
     cout << "netcp: no se puede abrir " << "'" << argv[1] << "'" << ": no such file or directory" << endl;
     exit(EXIT_FAILURE);
   }
+  
+
+
+
+
+
   return 0;
 }
