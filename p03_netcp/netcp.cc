@@ -21,19 +21,7 @@ int main(int argc, char* argv[]) {
   streampos size = file.tellg();
   if (size > 1024 || !file.is_open()) {
     cout << "netcp: no se puede abrir " << "'" << argv[1] << "'" << ": no such file or directory" << endl;
-    return 1;
+    exit(EXIT_FAILURE);
   }
-  
-  
-
-
-
-
-
-
-
-
-
-
   return 0;
 }
