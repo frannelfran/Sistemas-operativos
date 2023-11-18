@@ -14,15 +14,5 @@ int main(int argc, char* argv[]) {
     cout << "Pruebe ‘TM_simulator [-h | --help]’ para más información." << endl;
     return 1;
   }
-  
-  
-
-
-
-
-
-
-
-
   return 0;
 }
