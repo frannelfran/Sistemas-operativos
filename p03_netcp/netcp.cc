@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -11,8 +12,28 @@ int main(int argc, char* argv[]) {
     }
   }
   if (argc != 2) {
-    cout << "Pruebe ‘TM_simulator [-h | --help]’ para más información." << endl;
+    cout << "Falta un archivo como argumento: pruebe [-h | --help] para más información" << endl;
     return 1;
   }
+  // Lectura del fichero
+  ifstream file(argv[1]);
+  // Comprobar el tamaño del fichero y si existe
+  streampos size = file.tellg();
+  if (size > 1024 || !file.is_open()) {
+    cout << "netcp: no se puede abrir " << "'" << argv[1] << "'" << ": no such file or directory" << endl;
+    return 1;
+  }
+  
+  
+
+
+
+
+
+
+
+
+
+
   return 0;
 }
