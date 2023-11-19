@@ -19,6 +19,10 @@ struct program_options {
 */
 
 std::experimental::optional<program_options> parse_args(int argc, char* argv[]) {
+  if (argc < 2) {
+    std::cerr << "Pruebe [-h | --help] para más información\n";
+    return std::experimental::nullopt;
+  }
   std::vector<std::experimental::string_view> args(argv + 1, argv + argc);
   program_options options;
   for (auto it = args.begin(); it != args.end(); ++it) {

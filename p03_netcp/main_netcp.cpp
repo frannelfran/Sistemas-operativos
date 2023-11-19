@@ -6,15 +6,12 @@ int main (int argc, char* argv[]) {
   if (!options) {
     return EXIT_FAILURE;
   }
-  if (argc != 2) {
-    std::cout << "Pruebe [-h | --help] para más información" << std::endl;
-  }
   // Mostrar la ayuda si el usuario la solicita
   if (options.value().show_help) {
     print_usage();
     return EXIT_SUCCESS;
   }
-  std::string fd = options.value();
+  std::string data_file = options.value().output_filename;
   
 
   
