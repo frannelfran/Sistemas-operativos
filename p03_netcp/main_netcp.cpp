@@ -1,5 +1,7 @@
 #include "netcp.hpp"
+#include <fstream>
 #include "program_options.hpp"
+#include "sockaddr_in.hpp"
 
 int main (int argc, char* argv[]) {
   auto options = parse_args(argc, argv);
@@ -12,7 +14,6 @@ int main (int argc, char* argv[]) {
   if (options.value().show_help) {
     print_usage();
   }
-  
   
 
   return EXIT_SUCCESS;
