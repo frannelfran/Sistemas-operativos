@@ -15,3 +15,20 @@ std::string getenv(const std::string& name) {
     return std::string();
   }
 }
+
+/**
+ * @brief Leer el número de bytes del fichero
+ * @param fd Clave propia del fichero
+ * @param buffer Buffer que contiene los bytes del fichero
+ * @return Número de bytes que tiene el fichero 
+*/
+
+std::error_code read_file(int fd, std::vector<uint8_t>& buffer) {
+  ssize_t bytes_read = read(fd, buffer.data(), buffer.size()); // Leer los bytes del fichero
+  if (bytes_read < 0) {
+    return std::error_code(errno, std::system_category()); // Código de error de read_file
+  }
+  buffer.resize(bytes_read);
+  return std::error_code(0, std::system_category()); // Devolver 0 en caso de éxito
+}
+

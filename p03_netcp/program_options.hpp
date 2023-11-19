@@ -11,6 +11,13 @@ struct program_options {
   std::string output_filename;
 };
 
+/**
+ * @brief Manejar las opciones del programa
+ * @param argc Número de argumentos
+ * @param argv Array donde se almacenan los argumentos
+ * @return Objeto options de la estructura program_options
+*/
+
 std::experimental::optional<program_options> parse_args(int argc, char* argv[]) {
   std::vector<std::experimental::string_view> args(argv + 1, argv + argc);
   program_options options;
