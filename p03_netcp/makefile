@@ -1,7 +1,7 @@
 # Compilación
 main:
 	@echo "Compilando ficheros..."
-	g++-13 -o netcp -std=c++23 netcp.cc
+	g++-13 -o netcp -std=c++23 main_netcp.cpp netcp.cpp
 
 .PHONY: clean
 
