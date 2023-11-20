@@ -1,5 +1,6 @@
 #include "netcp.hpp"
 #include "program_options.hpp"
+#include <sys/stat.h>
 
 int main (int argc, char* argv[]) {
   auto options = parse_args(argc, argv);
@@ -20,12 +21,24 @@ int main (int argc, char* argv[]) {
   }
   else {
     std::error_code error = open_file_result.error();
-    std::cerr << "Error: (" << error.value() << ") " << error.message();
+    std::cerr << "Error: (" << error.value() << ") ";
     std::cerr << " No se ha podido abrir el fichero" << std::endl;
     return EXIT_FAILURE;
   }
-  // Verififcar si el fichero supera los 1iKB
-  
+  // Comprobar que no se produce ningún fallo a la hora de utilizar stat
+  struct stat file_data;
+  if (stat(data_file.c_str(), &file_data) == -1) {
+    close(fd); // Cerrar el descriptor en caso de error
+    std::cerr << "Error al obtener los datos" << std::endl;
+    return EXIT_FAILURE;
+  }
+  // Comprobar que el tamaño del fichero no supera los 1iKB
+  else {
+    if (file_data.st_size > 1024) {
+      std::cerr << "El archivo tiene un tamaño mayor de 1iKB" << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
 
   
   

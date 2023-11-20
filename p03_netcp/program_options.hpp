@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <cstdlib>
 #include <vector>
@@ -5,7 +6,6 @@
 #include <iterator>
 #include <optional>
 #include <string_view>
-#pragma once
 
 struct program_options {
   bool show_help = false;
