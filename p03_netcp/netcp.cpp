@@ -33,7 +33,11 @@ std::error_code read_file(int fd, std::vector<uint8_t>& buffer) {
 }
 
 /**
- * @brief Abrir el fichero y obtener un 
+ * @brief Abrir el fichero y obtener un descriptor
+ * @param path Nombre del archivo
+ * @param flags Operación que se le va a hacer al fichero
+ * @param mode Permisos que va a tener el archivo
+ * @return Descriptor del archivo
 */
 
 std::expected<int, std::error_code> open_file(const std::string& path, int flags, mode_t mode) {

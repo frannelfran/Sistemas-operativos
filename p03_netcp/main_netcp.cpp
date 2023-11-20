@@ -26,6 +26,8 @@ int main (int argc, char* argv[]) {
   }
   // Verififcar si el fichero supera los 1iKB
   
+
+  
   
   
 
