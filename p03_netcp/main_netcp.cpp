@@ -13,7 +13,7 @@ int main (int argc, char* argv[]) {
   }
   // Comprobar que el archivo se puede abrir
   std::string data_file = options.value().output_filename;
-  std::expected<int, std::error_code> open_file_result = open_file(data_file, O_RDONLY | O_CREAT, 0666);
+  std::expected<int, std::error_code> open_file_result = open_file(data_file, O_RDONLY, 0666);
   int fd;
   if (open_file_result) {
     fd = *open_file_result;
@@ -24,6 +24,8 @@ int main (int argc, char* argv[]) {
     std::cerr << " No se ha podido abrir el fichero" << std::endl;
     return EXIT_FAILURE;
   }
+  // Verififcar si el fichero supera los 1iKB
+  
   
   
 
