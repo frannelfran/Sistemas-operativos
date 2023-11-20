@@ -32,3 +32,15 @@ std::error_code read_file(int fd, std::vector<uint8_t>& buffer) {
   return std::error_code(0, std::system_category()); // Devolver 0 en caso de éxito
 }
 
+/**
+ * @brief Abrir el fichero y obtener un 
+*/
+
+std::expected<int, std::error_code> open_file(const std::string& path, int flags, mode_t mode) {
+  int fd = open(path.c_str(), flags, mode);
+  if (fd == -1) {
+    std::error_code error(errno, std::system_category());
+    return std::unexpected(error);
+  }
+  return fd;
+}

@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include <string>
+#include <iterator>
 #include <experimental/optional>
 #include <experimental/string_view>
 #pragma once
@@ -25,16 +26,12 @@ std::experimental::optional<program_options> parse_args(int argc, char* argv[]) 
   }
   std::vector<std::experimental::string_view> args(argv + 1, argv + argc);
   program_options options;
-  for (auto it = args.begin(); it != args.end(); ++it) {
+  for (auto it = args.begin(), end = args.end(); it != end; ++it) {
     if (*it == "-h" || *it == "--help") {
       options.show_help = true;
     }
-    else if (it++ != args.end()) {
+    if (std::next(it) == end) {
       options.output_filename == *it;
-    }
-    else {
-      std::cerr << "Error...\n";
-      return std::experimental::nullopt;
     }
   }
   return options;
