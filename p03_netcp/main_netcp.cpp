@@ -59,7 +59,7 @@ int main (int argc, char* argv[]) {
     close(socket_fd); // Cerrar el socket
     return EXIT_FAILURE;
   }
-
+  
   
   
   

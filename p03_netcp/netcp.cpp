@@ -80,7 +80,11 @@ std::optional<sockaddr_in> make_ip_address(const std::optional<std::string> ip_a
 */
 
 std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> address) {
-  return socket(AF_INET, SOCK_DGRAM, 0);
+  int socket_fd = socket(AF_INET, SOCK_DGRAM, 0); // Crear el cocket
+  if (socket_fd < 0) {
+    std::error_code error(errno, std::system_category());
+    return std::unexpected(error);
+  }
 }
 
 /**
