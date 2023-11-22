@@ -85,10 +85,44 @@ std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> addre
     std::error_code error(errno, std::system_category());
     return std::unexpected(error);
   }
-  int result = bind(socket_fd, reinterpret_cast<const sockaddr*>(&address.value()), sizeof(address));
-  return result;
+  int result;
+  if (address.has_value()) {
+    result = bind(socket_fd, reinterpret_cast<const sockaddr*>(&address.value()), sizeof(address));
+    if (result < 0) {
+      std::error_code error(errno, std::system_category());
+      return std::unexpected(error);
+    }
+  }
+  return socket_fd;
 }
 
-std::error_code send_to(int fd, const std::string& message) {
-  
+/**
+ * @brief Fucnión para comprobar que se ha enviado el mensaje
+ * @param fd Descriptor del socket
+ * @param message Mensaje a enviar
+ * @param address Dirección donde se va a enviar el mensaje
+ * @return Código dependiendo de si se ha enviado el mensaje o no
+*/
+
+std::error_code send_to(int fd, const std::string& message, const sockaddr_in& address) {
+  ssize_t bytes_send = sendto(fd, message.data(), message.size(), 0, reinterpret_cast<const sockaddr*>(&address), sizeof(address));
+  if (bytes_send < 0) {
+    std::error_code error(errno, std::system_category());
+    std::cerr << "Error sending data: " << error.message() << std::endl;
+    return error;
+  }
+  return std::error_code();  // No se produció ningún error
+}
+
+std::error_code receive_from(int fd, std::string& message, sockaddr_in& address) {
+  socklen_t src_lent = sizeof(address);
+  message.resize(100);
+  size_t receive_bytes = recvfrom(fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&address), &src_lent);
+  if (receive_bytes < 0) {
+    std::error_code error(errno, std::system_category());
+    std::cerr << "Error al recibir el mensaje" << std::endl;
+    return error;
+  }
+  message.resize(receive_bytes);
+  return std::error_code();
 }

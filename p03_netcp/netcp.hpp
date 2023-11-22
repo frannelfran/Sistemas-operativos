@@ -22,4 +22,5 @@ std::expected<int, std::error_code> open_file(const std::string& path, int flags
 std::string ip_address_to_string (const sockaddr_in& address); // Convertir la IP a string
 std::optional<sockaddr_in> make_ip_address(const std::optional<std::string> ip_address, uint16_t port); // Crear direcciones sockaddr_in a partir de la IP y un número de puerto
 std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> address); // Crear el socket
-std::error_code send_to(int fd, const std::string& message); // Enviar un mensaje
+std::error_code send_to(int fd, const std::string& message, const sockaddr_in& address); // Enviar un mensaje
+std::error_code receive_from(int fd, std::string& message, sockaddr_in& address); // Recibir un mensaje

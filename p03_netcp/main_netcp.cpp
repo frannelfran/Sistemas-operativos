@@ -53,8 +53,29 @@ int main (int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  // Mandar un mensaje
+  // Enviar un mensaje
+  std::string message("HOLA MUNDO");
+  std::error_code send_message_error = send_to(socket_fd, message, address.value());
+  if (!send_message_error) {
+    std::cout << "Mensaje mandado correctamente" << std::endl;
+  }
+  else {
+    std::cerr << "Error al mandar el mensaje" << std::endl;
+  }
+
+  // Recibir un mensaje
+  std::error_code receive_message_error = receive_from(socket_fd, message, address.value());
+  if (!receive_message_error) {
+    std::cout << "Se ha recibido el mensaje" << std::endl;
+  }
+  else {
+    std::cerr << "Error al recibir el mensaje" << std::endl;
+  }
+
   
+
+
+
 
 
 
