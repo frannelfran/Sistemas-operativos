@@ -1,6 +1,5 @@
 #include "netcp.hpp"
 #include "program_options.hpp"
-#include <sys/stat.h>
 
 int main (int argc, char* argv[]) {
   auto options = parse_args(argc, argv);
@@ -38,6 +37,27 @@ int main (int argc, char* argv[]) {
       std::cerr << "El archivo tiene un tamaño mayor de 1iKB" << std::endl;
       return EXIT_FAILURE;
     }
+  }
+  // Crear el socket
+  int socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (socket_fd < 0) {
+    std::cerr << "Error al crear el socket" << std::endl;
+    close(socket_fd); // Cerrar el socket
+    return EXIT_FAILURE;
+  }
+  // Asignar el puerto y la dirección IP al socket y crearlo
+  auto address = make_ip_address("10.6.128.106", 8080);
+  auto result = make_socket(address.value());
+  int sock_fd;
+  if (result) {
+    sock_fd = *result;
+  }
+  else {
+    std::error_code error_socket = result.error();
+    std::cerr << "Error: (" << error_socket.value() << ") ";
+    std::cerr << " No se ha podido crear el socket" << std::endl;
+    close(socket_fd); // Cerrar el socket
+    return EXIT_FAILURE;
   }
 
   
