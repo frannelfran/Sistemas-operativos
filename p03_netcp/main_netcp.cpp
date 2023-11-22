@@ -49,7 +49,7 @@ int main (int argc, char* argv[]) {
     std::error_code error_socket = result.error();
     std::cerr << "Error: (" << error_socket.value() << ") ";
     std::cerr << " No se ha podido crear el socket" << std::endl;
-    close(socket_fd); // Cerrar el socket
+    close(fd); // Cerrar el archivo
     return EXIT_FAILURE;
   }
 
