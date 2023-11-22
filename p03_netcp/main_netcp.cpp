@@ -40,7 +40,7 @@ int main (int argc, char* argv[]) {
   }
   // Asignar el puerto y la dirección IP al socket y crearlo
   auto address = make_ip_address("10.6.128.106", 8080);
-  auto result = make_socket(address);
+  auto result = make_socket(std::nullopt);
   int socket_fd;
   if (result) {
     socket_fd = *result;
@@ -49,7 +49,7 @@ int main (int argc, char* argv[]) {
     std::error_code error_socket = result.error();
     std::cerr << "Error: (" << error_socket.value() << ") ";
     std::cerr << " No se ha podido crear el socket" << std::endl;
-    close(fd); // Cerrar el archivo
+    close(socket_fd); // Cerrar el archivo
     return EXIT_FAILURE;
   }
 
