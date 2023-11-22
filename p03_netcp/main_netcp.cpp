@@ -40,7 +40,7 @@ int main (int argc, char* argv[]) {
   }
   // Asignar el puerto y la dirección IP al socket y crearlo
   auto address = make_ip_address("10.6.128.106", 8080);
-  auto result = make_socket(address.value());
+  auto result = make_socket(address);
   int socket_fd;
   if (result) {
     socket_fd = *result;

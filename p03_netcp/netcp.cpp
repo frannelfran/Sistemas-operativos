@@ -61,7 +61,7 @@ std::optional<sockaddr_in> make_ip_address(const std::optional<std::string> ip_a
   local_address.sin_family = AF_INET; // Establecer el tipo de conexión
   local_address.sin_port = htons(port); // Establecer el puerto
   if (ip_address.has_value()) {
-    if (inet_pton(AF_INET, ip_address.value().c_str(), &(local_address.sin_addr)) <= 0) {
+    if (inet_pton(AF_INET, ip_address.value().c_str(), &(local_address.sin_addr)) < 0) {
       std::cerr << "Error: IP Inválida" << std::endl;
       return std::nullopt;
     }
@@ -89,10 +89,6 @@ std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> addre
   return result;
 }
 
-/**
- * @brief Función para convertir la IP a una cadena de string
- * @param address Dirección a cambiar
- * @return String que contiene la dirección y el puerto
-*/
-
-// std::string ip_address_to_string(const sockaddr_in& address) {}
+std::error_code send_to(int fd, const std::string& message) {
+  
+}
