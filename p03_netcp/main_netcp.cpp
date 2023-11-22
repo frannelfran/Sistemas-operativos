@@ -6,11 +6,13 @@ int main (int argc, char* argv[]) {
   if (!options) {
     return EXIT_FAILURE;
   }
+  
   // Mostrar la ayuda si el usuario la solicita
   if (options.value().show_help) {
     print_usage();
     return EXIT_SUCCESS;
   }
+
   // Comprobar que el archivo se puede abrir
   std::string data_file = options.value().output_filename;
   std::expected<int, std::error_code> open_file_result = open_file(data_file, O_RDONLY, 0666);
@@ -24,6 +26,7 @@ int main (int argc, char* argv[]) {
     std::cerr << " No se ha podido abrir el fichero" << std::endl;
     return EXIT_FAILURE;
   }
+
   // Comprobar que no se produce ningún fallo a la hora de utilizar stat
   struct stat file_data;
   if (stat(data_file.c_str(), &file_data) == -1) {
@@ -38,6 +41,7 @@ int main (int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
   }
+
   // Asignar el puerto y la dirección IP al socket y crearlo
   auto address = make_ip_address("10.6.128.106", 8080);
   auto result = make_socket(std::nullopt);
