@@ -71,22 +71,18 @@ int main (int argc, char* argv[]) {
   else {
     std::cerr << "Error al recibir el mensaje" << std::endl;
   }
-
-  
-
+  close(socket_fd); // Cerrar el socket
 
 
 
 
 
 
-  
-  
-  
-  
 
-  
-  
+
+
+
+
 
   return EXIT_SUCCESS;
 }
