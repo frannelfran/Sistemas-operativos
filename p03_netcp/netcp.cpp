@@ -57,7 +57,7 @@ std::expected<int, std::error_code> open_file(const std::string& path, int flags
 */
 
 std::optional<sockaddr_in> make_ip_address(const std::optional<std::string> ip_address, uint16_t port) {
-  struct sockaddr_in local_address;
+  struct sockaddr_in local_address{};
   local_address.sin_family = AF_INET; // Establecer el tipo de conexión
   local_address.sin_port = htons(port); // Establecer el puerto
   if (ip_address.has_value()) {
@@ -85,6 +85,8 @@ std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> addre
     std::error_code error(errno, std::system_category());
     return std::unexpected(error);
   }
+  int result = bind(socket_fd, reinterpret_cast<const sockaddr*>(&address.value()), sizeof(address));
+  return result;
 }
 
 /**
