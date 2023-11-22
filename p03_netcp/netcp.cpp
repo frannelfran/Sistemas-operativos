@@ -116,7 +116,7 @@ std::error_code send_to(int fd, const std::string& message, const sockaddr_in& a
 
 /**
  * @brief Funcion para recibir el mensaje
- * @param  fd Descriptor del socket
+ * @param fd Descriptor del socket
  * @param message Mensaje a recibir
  * @param address Dirección donde se va a recibir el mensaje
  * @return Código dependiendo de si se ha recibido el mensaje 
