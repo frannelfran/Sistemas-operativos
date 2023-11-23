@@ -13,6 +13,10 @@ int main (int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
+  // Activar escucha si el usuario lo solicita
+  if (options.value().activar_escucha) {
+  }
+
   // Comprobar que el archivo se puede abrir
   std::string data_file = options.value().output_filename;
   std::expected<int, std::error_code> open_file_result = open_file(data_file, O_RDONLY, 0666);
@@ -78,14 +82,7 @@ int main (int argc, char* argv[]) {
     std::cerr << "Error al mandar el mensaje" << std::endl;
   }
 
-  // Recibir un mensaje
-  std::error_code receive_message_error = receive_from(socket_fd, buffer, address.value());
-  if (!receive_message_error) {
-    std::cout << "Se ha recibido el mensaje" << std::endl;
-  }
-  else {
-    std::cerr << "Error al recibir el mensaje" << std::endl;
-  }
+  // Liberar
   close(socket_fd); // Cerrar el socket
   close(fd); // Cerrar el archivo
   return EXIT_SUCCESS;

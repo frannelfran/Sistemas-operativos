@@ -9,6 +9,7 @@
 
 struct program_options {
   bool show_help = false;
+  bool activar_escucha = false;
   std::string output_filename;
 };
 
@@ -27,10 +28,13 @@ std::optional<program_options> parse_args(int argc, char* argv[]) {
   std::vector<std::string_view> args(argv + 1, argv + argc);
   program_options options;
   for (auto it = args.begin(), end = args.end(); it != end; ++it) {
-    if (*it == "-h" || *it == "--help") {
+    if (*it == "-h" || *it == "--help") { // Mostrar ayuda si se detecta -h o --help
       options.show_help = true;
     }
-    if (std::next(it) == end) {
+    if (*it == "-l") { // Activar el modo escucha si el usuario lo solicita
+      options.activar_escucha = true;
+    }
+    if (std::next(it) == end) { // Nombre del archivo
       options.output_filename = *it;
     }
   }
