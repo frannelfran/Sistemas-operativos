@@ -1,22 +1,6 @@
 #include "netcp.hpp"
 
 /**
- * @brief Obtener una cadena según el valor de una variable
- * @param name Nombre de la cadena
- * @return Obtener una cadena con el valor de una variable, si la variable existe, en caso contrario devuelve una cadena vacía
-*/
-
-std::string getenv(const std::string& name) {
-  char* value = ::getenv(name.c_str());
-  if (value) {
-    return std::string(value);
-  }
-  else {
-    return std::string();
-  }
-}
-
-/**
  * @brief Leer el número de bytes del fichero
  * @param fd Clave propia del fichero
  * @param buffer Buffer que contiene los bytes del fichero
@@ -104,11 +88,11 @@ std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> addre
  * @return Código dependiendo de si se ha enviado el mensaje o no
 */
 
-std::error_code send_to(int fd, const std::string& message, const sockaddr_in& address) {
+std::error_code send_to(int fd, const std::vector<uint8_t>& message, const sockaddr_in& address) {
   ssize_t bytes_send = sendto(fd, message.data(), message.size(), 0, reinterpret_cast<const sockaddr*>(&address), sizeof(address));
   if (bytes_send < 0) {
     std::error_code error(errno, std::system_category());
-    std::cerr << "Error sending data: " << error.message() << std::endl;
+    std::cerr << "Error para mandar el mensaje: " << error.message() << std::endl;
     return error;
   }
   return std::error_code();  // No se produció ningún error
@@ -122,7 +106,7 @@ std::error_code send_to(int fd, const std::string& message, const sockaddr_in& a
  * @return Código dependiendo de si se ha recibido el mensaje 
 */
 
-std::error_code receive_from(int fd, std::string& message, sockaddr_in& address) {
+std::error_code receive_from(int fd, std::vector<uint8_t>& message, sockaddr_in& address) {
   socklen_t src_lent = sizeof(address);
   message.resize(100);
   size_t receive_bytes = recvfrom(fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&address), &src_lent);

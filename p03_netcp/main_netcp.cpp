@@ -42,6 +42,18 @@ int main (int argc, char* argv[]) {
     }
   }
 
+  // Creo el buffer
+  std::vector<uint8_t> buffer(1024);
+  std::error_code read_file_error = read_file(fd, buffer);
+  if (!read_file_error) {
+    std::cout << "El buffer se ha creado correctamente" << std::endl;
+  }
+  else {
+    std::cerr << "Error: (" << read_file_error.value() << ") ";
+    std::cerr << " No se ha podido crear el buffer" << std::endl;
+    return EXIT_FAILURE;
+  }
+
   // Asignar el puerto y la dirección IP al socket y crearlo
   auto address = make_ip_address("10.6.128.106", 8080);
   auto result = make_socket(std::nullopt);
@@ -58,8 +70,7 @@ int main (int argc, char* argv[]) {
   }
 
   // Enviar un mensaje
-  std::string message("HOLA MUNDO");
-  std::error_code send_message_error = send_to(socket_fd, message, address.value());
+  std::error_code send_message_error = send_to(socket_fd, buffer, address.value());
   if (!send_message_error) {
     std::cout << "Mensaje mandado correctamente" << std::endl;
   }
@@ -68,7 +79,7 @@ int main (int argc, char* argv[]) {
   }
 
   // Recibir un mensaje
-  std::error_code receive_message_error = receive_from(socket_fd, message, address.value());
+  std::error_code receive_message_error = receive_from(socket_fd, buffer, address.value());
   if (!receive_message_error) {
     std::cout << "Se ha recibido el mensaje" << std::endl;
   }
