@@ -81,7 +81,7 @@ std::expected<int, std::error_code> make_socket(std::optional<sockaddr_in> addre
 }
 
 /**
- * @brief Fucnión para comprobar que se ha enviado el mensaje
+ * @brief Función para comprobar que se ha enviado el mensaje
  * @param fd Descriptor del socket
  * @param message Mensaje a enviar
  * @param address Dirección donde se va a enviar el mensaje
