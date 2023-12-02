@@ -249,7 +249,7 @@ std::error_code netcp_receive_file(const std::string& filename) {
   while (true) {
     // Recibir los fragmentos del fichero
     std::vector<uint8_t> buffer(1024);
-    std::error_code error_receive_from = receive_from(fd, buffer, address.value());
+    std::error_code error_receive_from = receive_from(socket_fd, buffer, address.value());
     if (error_receive_from) {
       std::cerr << "Error: (" << error_receive_from.value() << ") ";
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
