@@ -118,3 +118,151 @@ std::error_code receive_from(int fd, std::vector<uint8_t>& message, sockaddr_in&
   message.resize(receive_bytes);
   return std::error_code();
 }
+
+/**
+ * @brief Función principal del programa para enviar los datos del fichero
+ * @param filename Nombre del fichero
+*/
+
+std::error_code netcp_send_file(const std::string& filename) {
+  // Comprobar que el archivo se puede abrir
+  std::expected<int, std::error_code> open_file_result = open_file(filename, O_RDONLY, 0666);
+  int fd;
+  if (open_file_result) {
+    fd = *open_file_result;
+  }
+  else {
+    std::error_code error = open_file_result.error();
+    std::cerr << "Error: (" << error.value() << ") ";
+    std::cerr << " No se ha podido abrir el fichero" << std::endl;
+    return error;
+  }
+
+  // Comprobar que no se produce ningún fallo a la hora de utilizar stat
+  struct stat file_data;
+  if (stat(filename.c_str(), &file_data) == -1) {
+    close(fd); // Cerrar el descriptor en caso de error
+    std::cerr << "Error al obtener los datos" << std::endl;
+    return std::error_code(errno, std::generic_category());
+  }
+
+  // Asignar el puerto y la dirección IP al socket y crearlo
+  auto address = make_ip_address("10.6.128.106", 8080);
+  auto result = make_socket(std::nullopt);
+  int socket_fd;
+  if (result) {
+    socket_fd = *result;
+  }
+  else {
+    std::error_code error_socket = result.error();
+    std::cerr << "Error: (" << error_socket.value() << ") ";
+    std::cerr << " No se ha podido crear el socket" << std::endl;
+    close(socket_fd); // Cerrar el archivo
+    return error_socket;
+  }
+
+  // Vamos enviando el contenido del fichero mientras no hayamos leído su final
+  while (true) {
+    // Leer los fragmentos del fichero
+    std::vector<uint8_t> buffer(1024);
+    std::error_code read_file_error = read_file(fd, buffer);
+    if (read_file_error) {
+      std::cerr << "Error: (" << read_file_error.value() << ") ";
+      std::cerr << " No se ha podido crear el buffer" << std::endl;
+      break; // Salir del bucle en caso de error
+    }
+
+    // Enviar los framentos del fichero
+    std::error_code send_message_error = send_to(socket_fd, buffer, address.value());
+    if (send_message_error) {
+      std::cerr << "Error: (" << send_message_error.value() << ") ";
+      std::cerr << "Error al mandar el mensaje" << std::endl;
+      break; // salir del bucle en caso de error
+    }
+    // Verificar que hemos llegado al final del archivo
+    if (buffer.size() < 1024) {
+      break;
+    }
+  }
+
+  // Liberar
+  close(socket_fd); // Cerrar el socket
+  close(fd); // Cerrar el archivo
+  return std::error_code(); // Devolver éxito
+}
+
+/**
+ * @brief Modo esucha del programa
+ * @param filename Fichero que recibe los datos
+*/
+
+std::error_code netcp_receive_file(const std::string& filename) {
+  std::expected<int, std::error_code> open_file_result = open_file(filename,O_WRONLY, 0666); // Abrir el archivo para escritura
+  int fd;
+  if (open_file_result) {
+    fd = *open_file_result;
+  }
+  else {
+    std::error_code error = open_file_result.error();
+    std::cerr << "Error: (" << error.value() << ") ";
+    std::cerr << " No se ha podido abrir el fichero" << std::endl;
+    return error;
+  }
+
+  // Comprobar que no se produce ningún fallo a la hora de utilizar stat
+  struct stat file_data;
+  if (stat(filename.c_str(), &file_data) == -1) {
+    close(fd); // Cerrar el descriptor en caso de error
+    std::cerr << "Error al obtener los datos" << std::endl;
+    return std::error_code(errno, std::generic_category());
+  }
+
+  // Asignar el puerto y la dirección IP al socket y crearlo
+  auto address = make_ip_address("10.6.128.106", 8080);
+  auto result = make_socket(std::nullopt);
+  int socket_fd;
+  if (result) {
+    socket_fd = *result;
+  }
+  else {
+    std::error_code error_socket = result.error();
+    std::cerr << "Error: (" << error_socket.value() << ") ";
+    std::cerr << " No se ha podido crear el socket" << std::endl;
+    close(socket_fd); // Cerrar el archivo
+    return error_socket;
+  }
+
+  // Recibir frgamentos del fichero
+  while (true) {
+    // Recibir los fragmentos del fichero
+    std::vector<uint8_t> buffer(1024);
+    std::error_code error_receive_from = receive_from(fd, buffer, address.value());
+    if (error_receive_from) {
+      std::cerr << "Error: (" << error_receive_from.value() << ") ";
+      std::cerr << " No se ha podido recibir el mensaje" << std::endl;
+      break; // salir si no se recibe el mensaje
+    }
+    
+
+    
+
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
