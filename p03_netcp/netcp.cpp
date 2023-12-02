@@ -4,7 +4,7 @@
  * @brief Leer el número de bytes del fichero
  * @param fd Clave propia del fichero
  * @param buffer Buffer que contiene los bytes del fichero
- * @return Número de bytes que tiene el fichero 
+ * @return Número de bytes que tiene el fichero
 */
 
 std::error_code read_file(int fd, std::vector<uint8_t>& buffer) {
@@ -14,6 +14,21 @@ std::error_code read_file(int fd, std::vector<uint8_t>& buffer) {
   }
   buffer.resize(bytes_read);
   return std::error_code(0, std::system_category()); // Devolver 0 en caso de éxito
+}
+
+/**
+ * @brief Escribir en el buffer
+ * @param fd Clave propia del fichero
+ * @param buffer Buffer que contiene los bytes del fichero
+*/
+
+std::error_code write_file(int fd, std::vector<uint8_t>& buffer) {
+  ssize_t bytes_write = write(fd, buffer.data(), buffer.size());
+  if (bytes_write < 0) {
+    return std::error_code(errno, std::system_category()); // Código de error al escribir los bytes
+  }
+  buffer.resize(bytes_write);
+  return std::error_code(); // Devolver éxito
 }
 
 /**
@@ -108,14 +123,12 @@ std::error_code send_to(int fd, const std::vector<uint8_t>& message, const socka
 
 std::error_code receive_from(int fd, std::vector<uint8_t>& message, sockaddr_in& address) {
   socklen_t src_lent = sizeof(address);
-  message.resize(100);
   size_t receive_bytes = recvfrom(fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&address), &src_lent);
   if (receive_bytes < 0) {
     std::error_code error(errno, std::system_category());
     std::cerr << "Error al recibir el mensaje" << std::endl;
     return error;
   }
-  message.resize(receive_bytes);
   return std::error_code();
 }
 
@@ -172,7 +185,7 @@ std::error_code netcp_send_file(const std::string& filename) {
       break; // Salir del bucle en caso de error
     }
 
-    // Enviar los framentos del fichero
+    // Enviar los fragmentos del fichero
     std::error_code send_message_error = send_to(socket_fd, buffer, address.value());
     if (send_message_error) {
       std::cerr << "Error: (" << send_message_error.value() << ") ";
@@ -197,7 +210,7 @@ std::error_code netcp_send_file(const std::string& filename) {
 */
 
 std::error_code netcp_receive_file(const std::string& filename) {
-  std::expected<int, std::error_code> open_file_result = open_file(filename,O_WRONLY, 0666); // Abrir el archivo para escritura
+  std::expected<int, std::error_code> open_file_result = open_file(filename, O_WRONLY, 0666); // Abrir el archivo para escritura
   int fd;
   if (open_file_result) {
     fd = *open_file_result;
@@ -232,7 +245,7 @@ std::error_code netcp_receive_file(const std::string& filename) {
     return error_socket;
   }
 
-  // Recibir frgamentos del fichero
+  // Recibir fragmentos del fichero
   while (true) {
     // Recibir los fragmentos del fichero
     std::vector<uint8_t> buffer(1024);
@@ -242,27 +255,18 @@ std::error_code netcp_receive_file(const std::string& filename) {
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
       break; // salir si no se recibe el mensaje
     }
-    
-
-    
-
-
-
-
+    // Escribir los fragmentos en el fichero
+    std::error_code error_write_file = write_file(fd, buffer);
+    if (error_write_file) {
+      std::cerr << "Error: (" << error_write_file.value() << ") ";
+      std::cerr << " No se ha podido escribir en el fichero" << std::endl;
+      break; // salir si no se puede escribir en el fichero
+    }
   }
 
+  // Cerrar el socket y realizar otras operaciones necesarias
+  close(socket_fd);
+  close(fd);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return std::error_code(); // Devolver éxito
 }

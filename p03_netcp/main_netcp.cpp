@@ -15,7 +15,16 @@ int main (int argc, char* argv[]) {
 
   // Activar escucha si el usuario lo solicita
   if (options.value().activar_escucha) {
+    std::error_code netcp_receive_file_error = netcp_receive_file(options.value().output_filename);
+    if (!netcp_receive_file_error) {
+      std::cout << "Mensaje recibido correctamente" << std::endl;
+    }
+    else {
+      std::cerr << "Error: (" << netcp_receive_file_error.value() << ") ";
+      std::cerr << " No se ha podido recibir el mensaje" << std::endl;
+    }
   }
+  
   // Modo normal
   else {
     std::error_code netcp_send_file_error = netcp_send_file(options.value().output_filename);
