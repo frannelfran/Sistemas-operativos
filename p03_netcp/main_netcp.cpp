@@ -9,12 +9,21 @@ int main (int argc, char* argv[]) {
   
   // Mostrar la ayuda si el usuario la solicita
   if (options.value().show_help) {
-    print_usage();
+    std::cout << "Modo de empleo: ./netcp testfile" << std::endl;
     return EXIT_SUCCESS;
   }
 
   // Activar escucha si el usuario lo solicita
   if (options.value().activar_escucha) {
+    
+
+
+
+
+
+
+
+
   }
 
   // Comprobar que el archivo se puede abrir
@@ -38,6 +47,8 @@ int main (int argc, char* argv[]) {
     std::cerr << "Error al obtener los datos" << std::endl;
     return EXIT_FAILURE;
   }
+
+  /*
   // Comprobar que el tamaño del fichero no supera los 1iKB
   else {
     if (file_data.st_size > 1024) {
@@ -45,6 +56,7 @@ int main (int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
   }
+  */
 
   // Creo el buffer
   std::vector<uint8_t> buffer(1024);
@@ -79,6 +91,7 @@ int main (int argc, char* argv[]) {
     std::cout << "Mensaje mandado correctamente" << std::endl;
   }
   else {
+    std::cerr << "Error: (" << send_message_error.value() << ") ";
     std::cerr << "Error al mandar el mensaje" << std::endl;
   }
 

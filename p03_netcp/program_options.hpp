@@ -40,7 +40,3 @@ std::optional<program_options> parse_args(int argc, char* argv[]) {
   }
   return options;
 }
-
-void print_usage() {
-  std::cout << "Modo de empleo: ./netcp testfile" << std::endl;
-}
