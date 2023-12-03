@@ -160,7 +160,7 @@ std::error_code netcp_send_file(const std::string& filename) {
   }
 
   // Asignar el puerto y la dirección IP al socket y crearlo
-  auto address = make_ip_address("10.6.128.106", 8080);
+  auto address = make_ip_address("127.0.0.1", 8080);
   auto result = make_socket(std::nullopt);
   int socket_fd;
   if (result) {
@@ -231,7 +231,7 @@ std::error_code netcp_receive_file(const std::string& filename) {
   }
 
   // Asignar el puerto y la dirección IP al socket y crearlo
-  auto address = make_ip_address("10.6.128.106", 8080);
+  auto address = make_ip_address("127.0.0.1", 8080);
   auto result = make_socket(std::nullopt);
   int socket_fd;
   if (result) {
@@ -255,6 +255,8 @@ std::error_code netcp_receive_file(const std::string& filename) {
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
       return error_receive_from; // salir si no se recibe el mensaje
     }
+
+    std::cout << "HOLA" << std::endl;
     // Escribir los fragmentos en el fichero
     std::error_code error_write_file = write_file(fd, buffer);
     if (error_write_file) {
