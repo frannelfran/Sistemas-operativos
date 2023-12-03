@@ -255,8 +255,6 @@ std::error_code netcp_receive_file(const std::string& filename) {
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
       return error_receive_from; // salir si no se recibe el mensaje
     }
-
-    std::cout << "HOLA" << std::endl;
     // Escribir los fragmentos en el fichero
     std::error_code error_write_file = write_file(fd, buffer);
     if (error_write_file) {
