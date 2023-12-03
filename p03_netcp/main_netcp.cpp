@@ -20,7 +20,6 @@ int main (int argc, char* argv[]) {
       std::cout << "Mensaje recibido correctamente" << std::endl;
     }
     else {
-      std::cerr << "Error: (" << netcp_receive_file_error.value() << ") ";
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
     }
   }
@@ -32,7 +31,6 @@ int main (int argc, char* argv[]) {
       std::cout << "Mensaje enviado correctamente" << std::endl;
     }
     else {
-      std::cerr << "Error: (" << netcp_send_file_error.value() << ") ";
       std::cerr << " No se ha podido enviar el mensaje" << std::endl;
     }
   }

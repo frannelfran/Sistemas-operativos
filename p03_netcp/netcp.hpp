@@ -11,7 +11,6 @@
 #include <netinet/ip.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <atomic>
 #include <optional>
 #include <vector>
 #include <string>

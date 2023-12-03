@@ -182,7 +182,7 @@ std::error_code netcp_send_file(const std::string& filename) {
     if (read_file_error) {
       std::cerr << "Error: (" << read_file_error.value() << ") ";
       std::cerr << " No se ha podido crear el buffer" << std::endl;
-      break; // Salir del bucle en caso de error
+      return read_file_error; // Salir del bucle en caso de error
     }
 
     // Enviar los fragmentos del fichero
@@ -190,7 +190,7 @@ std::error_code netcp_send_file(const std::string& filename) {
     if (send_message_error) {
       std::cerr << "Error: (" << send_message_error.value() << ") ";
       std::cerr << "Error al mandar el mensaje" << std::endl;
-      break; // salir del bucle en caso de error
+      return send_message_error; // salir del bucle en caso de error
     }
     // Verificar que hemos llegado al final del archivo
     if (buffer.size() < 1024) {
@@ -253,14 +253,14 @@ std::error_code netcp_receive_file(const std::string& filename) {
     if (error_receive_from) {
       std::cerr << "Error: (" << error_receive_from.value() << ") ";
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
-      break; // salir si no se recibe el mensaje
+      return error_receive_from; // salir si no se recibe el mensaje
     }
     // Escribir los fragmentos en el fichero
     std::error_code error_write_file = write_file(fd, buffer);
     if (error_write_file) {
       std::cerr << "Error: (" << error_write_file.value() << ") ";
       std::cerr << " No se ha podido escribir en el fichero" << std::endl;
-      break; // salir si no se puede escribir en el fichero
+      return error_write_file; // salir si no se puede escribir en el fichero
     }
   }
 
