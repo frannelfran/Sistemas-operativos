@@ -121,10 +121,9 @@ std::error_code send_to(int fd, const std::vector<uint8_t>& message, const socka
  * @return Código dependiendo de si se ha recibido el mensaje 
 */
 
-std::error_code receive_from(int fd, std::vector<uint8_t>& message, const sockaddr_in& address) {
-  sockaddr_in remote_address = address;
-  socklen_t src_lent = sizeof(sockaddr_in);
-  ssize_t receive_bytes = recvfrom(fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&remote_address), &src_lent);
+std::error_code receive_from(int fd, std::vector<uint8_t>& message, sockaddr_in& address) {
+  socklen_t src_lent = sizeof(address);
+  ssize_t receive_bytes = recvfrom(fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&address), &src_lent);
   if (receive_bytes < 0) {
     std::error_code error(errno, std::system_category());
     std::cerr << "Error al recibir el mensaje" << std::endl;
