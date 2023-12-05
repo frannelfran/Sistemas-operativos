@@ -14,6 +14,12 @@
 #include <optional>
 #include <vector>
 #include <string>
+#include <string.h>
+#include <signal.h>
+#include <errno.h>
+#include <stdio.h>
+#include <atomic>
+
 #pragma once
 
 std::error_code read_file(int fd, std::vector<uint8_t>& buffer); // Leer el buffer
@@ -25,3 +31,4 @@ std::error_code send_to(int fd, const std::vector<uint8_t>& message, const socka
 std::error_code receive_from(int fd, std::vector<uint8_t>& message, sockaddr_in& address); // Recibir un mensaje
 std::error_code netcp_send_file(const std::string& filename); // Modo normal del programa
 std::error_code netcp_receive_file(const std::string& filename); // Modo escucha del programa
+void term_signal_handler(int signum); // Señal del programa

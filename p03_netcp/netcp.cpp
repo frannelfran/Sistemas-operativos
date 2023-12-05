@@ -1,5 +1,7 @@
 #include "netcp.hpp"
 
+std::atomic<bool> quit_request = false;
+
 /**
  * @brief Leer el número de bytes del fichero
  * @param fd Clave propia del fichero
@@ -107,7 +109,6 @@ std::error_code send_to(int fd, const std::vector<uint8_t>& message, const socka
   ssize_t bytes_send = sendto(fd, message.data(), message.size(), 0, reinterpret_cast<const sockaddr*>(&address), sizeof(address));
   if (bytes_send < 0) {
     std::error_code error(errno, std::system_category());
-    std::cerr << "Error para mandar el mensaje: " << error.message() << std::endl;
     return error;
   }
   return std::error_code();  // No se produció ningún error
@@ -126,11 +127,39 @@ std::error_code receive_from(int fd, std::vector<uint8_t>& message, sockaddr_in&
   ssize_t receive_bytes = recvfrom(fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&address), &src_lent);
   if (receive_bytes < 0) {
     std::error_code error(errno, std::system_category());
-    std::cerr << "Error al recibir el mensaje" << std::endl;
     return error;
   }
   message.resize(receive_bytes);
   return std::error_code();
+}
+
+/**
+ * @brief Función para manejar las señales
+*/
+
+void term_signal_handler(int signum) {
+  const char* message;
+  // Señal SIGTERM
+  if (signum == SIGTERM) {
+    message = "Señal SIGTERM recibida.\n";
+  }
+  // Señal SIGINT
+  else if (signum == SIGINT) {
+    message = "Señal SIGINT recibida.\n";
+  }
+  // Señal SIGHUP
+  else if (signum == SIGHUP) {
+    message = "Señal SIGHUP recibida.\n";
+  }
+  // Señal SIGQUIT
+  else if (signum == SIGQUIT) {
+    message = "Señal SIGQUIT recibida.\n";
+  }
+  else {
+    message = "Señal desconocida recibida.\n";
+  }
+  write(STDOUT_FILENO, message, strlen(message));
+  quit_request = true;
 }
 
 /**
@@ -182,6 +211,10 @@ std::error_code netcp_send_file(const std::string& filename) {
     // Leer los fragmentos del fichero
     std::error_code read_file_error = read_file(fd, buffer);
     if (read_file_error) {
+      // Parar si la señal está activada
+      if (read_file_error.value() == EINTR) {
+        return read_file_error;
+      }
       std::cerr << "Error: (" << read_file_error.value() << ") ";
       std::cerr << " No se ha podido crear el buffer" << std::endl;
       return read_file_error; // Salir del bucle en caso de error
@@ -190,6 +223,10 @@ std::error_code netcp_send_file(const std::string& filename) {
     // Enviar los fragmentos del fichero
     std::error_code send_message_error = send_to(socket_fd, buffer, address.value());
     if (send_message_error) {
+      // Parar si la señal está activada
+      if (send_message_error.value() == EINTR) {
+        return send_message_error;
+      }
       std::cerr << "Error: (" << send_message_error.value() << ") ";
       std::cerr << "Error al mandar el mensaje" << std::endl;
       return send_message_error; // salir del bucle en caso de error
@@ -247,10 +284,17 @@ std::error_code netcp_receive_file(const std::string& filename) {
   // Recibir fragmentos del fichero
   ssize_t bytes_write;
   do {
+    if (quit_request) { // Para el programa si existe una señal
+      break;
+    }
     // Recibir los fragmentos del fichero
     std::vector<uint8_t> buffer(1024);
     std::error_code error_receive_from = receive_from(socket_fd, buffer, address.value());
     if (error_receive_from) {
+      // Parar si la señal está activada
+      if (error_receive_from.value() == EINTR) {
+        return error_receive_from;
+      }
       std::cerr << "Error: (" << error_receive_from.value() << ") ";
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
       return error_receive_from; // salir si no se recibe el mensaje
@@ -260,6 +304,10 @@ std::error_code netcp_receive_file(const std::string& filename) {
     // Escribir los fragmentos en el fichero
     std::error_code error_write_file = write_file(fd, buffer);
     if (error_write_file) {
+      // Parar si la señal está activada
+      if (error_write_file.value() == EINTR) {
+        return error_write_file;
+      }
       std::cerr << "Error: (" << error_write_file.value() << ") ";
       std::cerr << " No se ha podido escribir en el fichero" << std::endl;
       return error_write_file; // salir si no se puede escribir en el fichero

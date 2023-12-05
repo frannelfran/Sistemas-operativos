@@ -13,6 +13,15 @@ int main (int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
+  // Señales del programa
+  struct sigaction term_action = {0};
+  term_action.sa_handler = &term_signal_handler;
+
+  sigaction(SIGTERM, &term_action, NULL );
+  sigaction(SIGINT, &term_action, NULL );
+  sigaction(SIGHUP, &term_action, NULL );
+  sigaction(SIGQUIT, &term_action, NULL);
+
   // Activar escucha si el usuario lo solicita
   if (options.value().activar_escucha) {
     std::error_code netcp_receive_file_error = netcp_receive_file(options.value().output_filename);
@@ -20,6 +29,9 @@ int main (int argc, char* argv[]) {
       std::cout << "Mensaje recibido correctamente" << std::endl;
     }
     else {
+      if (netcp_receive_file_error.value() == EINTR) {
+        return 0;
+      }
       std::cerr << " No se ha podido recibir el mensaje" << std::endl;
     }
   }
@@ -31,6 +43,9 @@ int main (int argc, char* argv[]) {
       std::cout << "Mensaje enviado correctamente" << std::endl;
     }
     else {
+      if (netcp_send_file_error.value() == EINTR) {
+        return 0;
+      }
       std::cerr << " No se ha podido enviar el mensaje" << std::endl;
     }
   }
