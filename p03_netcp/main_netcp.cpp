@@ -17,9 +17,9 @@ int main (int argc, char* argv[]) {
   struct sigaction term_action;
   term_action.sa_handler = &term_signal_handler;
 
-  sigaction(SIGTERM, &term_action, NULL );
-  sigaction(SIGINT, &term_action, NULL );
-  sigaction(SIGHUP, &term_action, NULL );
+  sigaction(SIGTERM, &term_action, NULL);
+  sigaction(SIGINT, &term_action, NULL);
+  sigaction(SIGHUP, &term_action, NULL);
   sigaction(SIGQUIT, &term_action, NULL);
 
   // Activar escucha si el usuario lo solicita
