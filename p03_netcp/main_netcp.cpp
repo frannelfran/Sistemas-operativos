@@ -14,7 +14,7 @@ int main (int argc, char* argv[]) {
   }
 
   // Señales del programa
-  struct sigaction term_action = {0};
+  struct sigaction term_action;
   term_action.sa_handler = &term_signal_handler;
 
   sigaction(SIGTERM, &term_action, NULL );
@@ -30,9 +30,9 @@ int main (int argc, char* argv[]) {
     }
     else {
       if (netcp_receive_file_error.value() == EINTR) {
-        return 0;
+        return EXIT_SUCCESS;
       }
-      std::cerr << " No se ha podido recibir el mensaje" << std::endl;
+      std::cerr << "No se ha podido recibir el mensaje" << std::endl;
     }
   }
   
@@ -44,9 +44,9 @@ int main (int argc, char* argv[]) {
     }
     else {
       if (netcp_send_file_error.value() == EINTR) {
-        return 0;
+        return EXIT_SUCCESS;
       }
-      std::cerr << " No se ha podido enviar el mensaje" << std::endl;
+      std::cerr << "No se ha podido enviar el mensaje" << std::endl;
     }
   }
 
