@@ -49,6 +49,5 @@ int main (int argc, char* argv[]) {
       std::cerr << "No se ha podido enviar el mensaje" << std::endl;
     }
   }
-
   return EXIT_SUCCESS;
 }
