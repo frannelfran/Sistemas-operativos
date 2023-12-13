@@ -1,6 +1,6 @@
 #include "netcp.hpp"
 
-std::atomic<bool> quit_request = false;
+std::atomic<bool> quit_request = false; // Variable global para verificar las señales del programa
 
 /**
  * @brief Leer el número de bytes del fichero
